@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+    <h1>2-Select variables that will be used in training </h1>
+<form method="post">
+{% for col in df.columns %}
+<input type="checkbox" name="hello" value= {{ col }} checked>
+    {{ col }}
+{% endfor %}
+<input type="submit">
+</form>

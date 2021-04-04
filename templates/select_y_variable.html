@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+    <h1>3- Select value that will be predicted </h1>
+<form method="post">
+{% for col in df.columns %}
+<input type="checkbox" name="hello" value= {{ col }} checked>
+    {{ col }}
+{% endfor %}
+<input type="submit">
+</form>
