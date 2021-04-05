@@ -81,7 +81,7 @@ def assign_datatypes(data,dataTypes):
         "INT" : np.int32,
         "FLOAT" : np.float32,
         "CATEGORICAL" : np.object,
-        "BOOLEAN" : _
+        "BOOLEAN" : np.bool
     }
 
     for i in range(len(dataTypes)):
