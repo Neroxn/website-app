@@ -6,7 +6,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField,PasswordField, SubmitField,BooleanField
 from wtforms.validators import DataRequired,Length,Email,EqualTo
 
-def load_dataset(path,delimitter, assumption = False):
+def load_dataset(path,delimitter,qualifier,assumption = False):
     """
     Read file with given extension.
     If CSV : Read columns with pandas
@@ -36,7 +36,7 @@ def load_dataset(path,delimitter, assumption = False):
             for line in file:
                 # read line and split the columns/types
                 line = (line.rstrip('\n')).split(delimitter)
-                line = [col.strip('"') for col in line]
+                line = [col.strip(qualifier) for col in line]
 
                 # if value types/columns
                 if isTypes:
