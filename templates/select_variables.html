@@ -1,12 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
+<style>
+.checkboxes li {
+  display: block;
+  float: left;
+  width: 25%;
+}
+.submit{
+	width: 90px;
+	height: 40px;
+}
+body {
+	background: rgba(0, 128, 0, 0.3);
+}
+</style>
 </head>
-    <h1>2-Select variables that will be used in training </h1>
+    <h1>Select variables that will be used in training </h1>
 <form method="post">
+<ul class='checkboxes'>
+	
 {% for col in df.columns %}
-<input type="checkbox" name="hello" value= {{ col }} checked>
-    {{ col }}
+<li><input type="checkbox" name="hello" value= {{ col }} checked>
+    {{ col }}</li>
 {% endfor %}
-<input type="submit">
+</ul>
+<input type="submit" class='sumbit'>
 </form>
