@@ -41,13 +41,14 @@ def upload_file():
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
             delimitter = request.form['delimitter']
+            qualifier = request.form['qualifier']
             if request.form.get('is-value-type'):
                 assumption = True
             else:
                 assumption = False
             print(assumption)
             # read the file
-            dataTypes, dataColumns, df = load_dataset(file_path,delimitter=delimitter, assumption=assumption)
+            dataTypes, dataColumns, df = load_dataset(file_path,delimitter=delimitter,qualifier = qualifier, assumption=assumption)
             return redirect(url_for('select_variables',filename=filename))
     else:                        
         return render_template("upload_file.html")
