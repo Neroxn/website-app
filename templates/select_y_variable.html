@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<script language="JavaScript">
+function toggle(source) {
+  checkboxes = document.getElementsByName('hello');
+  for(var checkbox in checkboxes)
+    checkbox.checked = source.checked;
+}
+</script>
 <style>
 .checkboxes li {
   display: block;
@@ -18,6 +25,7 @@ body {
 </head>
     <h1>Select variables that will be used in training </h1>
 <form method="post">
+<button type='button' onClick='toggle(this)'>Toggle All</button>
 <ul class='checkboxes'>
 	
 {% for col in columns %}

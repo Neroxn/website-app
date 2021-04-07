@@ -60,16 +60,19 @@ def select_variables():
     if request.method == 'POST':
         selected = request.form.getlist('hello')
         return redirect(url_for('select_y'))
-
-    return render_template("select_variables.html", df = df, columns = df.columns.sort_values())
+    #join types and column names and send it to page
+    finalColumnNamesX= []
+    for i in range(len(dataColumns)):
+        finalColumnNamesX.append(dataColumns[i] + '(' + dataTypes[i] + ')')
+    return render_template("select_variables.html", df = df, columns = finalColumnNamesX.sort())
 
 #Select y-variables among checkboxes
 @app.route("/select_y",methods = ["GET","POST"])
 def select_y():
     if request.method == 'POST':
         return """ SIKE """
-    df2 = df.drop(selected, axis = 1)
-    return render_template("select_y_variable.html", df = df2, columns = df2.columns.sort_values())
+    finalColumnNamesY = list(set(finalColumnNamesX) - set(selected))
+    return render_template("select_y_variable.html", df = df2, columns = finalColumnNamesY.sort())
 
 if __name__ == "__main__":
     app.run(debug=True)
