@@ -18,7 +18,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     global df
-    
     if request.method == 'POST':
 
         # check if the post request has the file part
@@ -49,7 +48,10 @@ def upload_file():
             print(assumption)
             # read the file
             dataTypes, dataColumns, df = load_dataset(file_path,delimitter=delimitter,qualifier = qualifier, assumption=assumption)
-            return redirect(url_for('select_variables',filename=filename))
+            #return redirect(url_for('select_variables',filename=filename))
+            isLoaded = True
+            return render_template("upload_file.html", column_names=df.columns.values, row_data=list(df.head(5).values.tolist()),
+                           link_column="Patient ID", zip=zip, isLoaded = isLoaded)
     else:                        
         return render_template("upload_file.html")
 
