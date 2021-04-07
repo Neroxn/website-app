@@ -61,7 +61,7 @@ def select_variables():
         selected = request.form.getlist('hello')
         return redirect(url_for('select_y'))
 
-    return render_template("select_variables.html", df = df)
+    return render_template("select_variables.html", df = df, columns = df.columns.sort_values())
 
 #Select y-variables among checkboxes
 @app.route("/select_y",methods = ["GET","POST"])
@@ -69,7 +69,7 @@ def select_y():
     if request.method == 'POST':
         return """ SIKE """
     df2 = df.drop(selected, axis = 1)
-    return render_template("select_y_variable.html", df = df2)
+    return render_template("select_y_variable.html", df = df2, columns = df2.columns.sort_values())
 
 if __name__ == "__main__":
     app.run(debug=True)

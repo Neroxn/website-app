@@ -20,7 +20,7 @@ body {
 <form method="post">
 <ul class='checkboxes'>
 	
-{% for col in df.columns %}
+{% for col in columns %}
 <li><input type="checkbox" name="hello" value= {{ col }} checked>
     {{ col }}</li>
 {% endfor %}
