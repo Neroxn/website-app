@@ -3,9 +3,13 @@
 <head>
 <script language="JavaScript">
 function toggle(source) {
-  checkboxes = document.getElementsByName('hello');
+  let checkboxes = document.getElementsByName('hello');
   for(var checkbox in checkboxes)
-    checkbox.checked = source.checked;
+    if(checkbox.checked){
+		checkbox.checked = false;
+	}else{
+		checkbox.checked = true;
+	}
 }
 </script>
 <style>
