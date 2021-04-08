@@ -42,6 +42,7 @@ def load_dataset(path,delimitter = ",",qualifier = '"',assumption = False):
                 if isTypes:
                     dataTypes = line
                     isTypes = False
+                    
                 elif isColumn:
                     dataColumns = line
                     isColumn = False
@@ -53,6 +54,8 @@ def load_dataset(path,delimitter = ",",qualifier = '"',assumption = False):
         df = pd.DataFrame(data = values, columns = dataColumns)
         if assumption:
             df = assign_datatypes(df,dataTypes)
+        else:
+            dataTypes = df.dtypes
         return dataTypes,dataColumns,df
     print("Error")
 
