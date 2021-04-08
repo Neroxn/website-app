@@ -52,6 +52,8 @@ def load_dataset(path,delimitter = ",",qualifier = '"',assumption = False):
                     values += [line]
         # dataframe is created
         df = pd.DataFrame(data = values, columns = dataColumns)
+        df.set_index(df.columns[0])
+        df.drop([df.columns[0]],inplace=True,axis=1)
         if assumption:
             df = assign_datatypes(df,dataTypes)
         else:
