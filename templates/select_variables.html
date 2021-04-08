@@ -4,8 +4,9 @@
 <script language="JavaScript">
 function toggle(source) {
   let checkboxes = document.getElementsByName('hello');
-  for(var checkbox in checkboxes)
-    checkbox.checked = !checkbox.checked;
+  for(let i = 0; i < checkboxes.length; i++){
+    checkboxes[i].checked = !checkboxes[i].checked;
+  }
 }
 </script>
 <style>
