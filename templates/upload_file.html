@@ -7,12 +7,11 @@
 	padding-top: 200px;
 }
 .choose-file {
-	width: 180px;
-	height: 50px;
+	font-size: 20px;
 }
 .upload{
-	width: 90px;
-	height: 40px;
+	width: 80px;
+	height: 30px;
 }
 body {
 	background: rgba(0, 128, 0, 0.3);
@@ -20,12 +19,12 @@ body {
 </style>
 </head>
 <div class='yazi'>
-    <h1>1-Upload New File (Allowed extensions : csv) </h1>
+    <h1>Upload New File (Allowed extensions : csv) </h1>
     <form action="" method=post enctype=multipart/form-data>
       <p><input type=file name=file>
       <p>Delimitter <input type = "text" name = "delimitter" /></p>
       <p>First row value types <input type="checkbox" name="is-value-type" value = 1 checked></p>
-      <input type=submit value=Upload>
+      <input type=submit value=Upload class='upload'>
     </form>
 </div>
 </html>
