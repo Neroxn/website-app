@@ -5,11 +5,7 @@
 function toggle(source) {
   let checkboxes = document.getElementsByName('hello');
   for(var checkbox in checkboxes)
-    if(checkbox.checked){
-		checkbox.checked = false;
-	}else{
-		checkbox.checked = true;
-	}
+    checkbox.checked = !checkbox.checked;
 }
 </script>
 <style>
