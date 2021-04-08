@@ -10,6 +10,7 @@ ALLOWED_EXTENSIONS = set(['txt', 'csv'])
 
 #Global variables that can bee accesed
 df = pd.DataFrame()
+dataColumns = pd.DataFrame()
 selected = []
 app = Flask(__name__) 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -45,9 +46,10 @@ def upload_file():
                 assumption = True
             else:
                 assumption = False
-            print(assumption)
+
             # read the file
             dataTypes, dataColumns, df = load_dataset(file_path,delimitter=delimitter,qualifier = qualifier, assumption=assumption)
+
             #return redirect(url_for('select_variables',filename=filename))
             isLoaded = True
             return render_template("upload_file.html", column_names=df.columns.values, row_data=list(df.head(5).values.tolist()),
@@ -58,23 +60,34 @@ def upload_file():
 #Select x-variables among checkboxes
 @app.route("/select_variables", methods = ["GET","POST"])
 def select_variables():
-    global selected
+    global selected,df
     if request.method == 'POST':
         selected = request.form.getlist('hello')
         return redirect(url_for('select_y'))
+
     #join types and column names and send it to page
     finalColumnNamesX= []
-    for i in range(len(dataColumns)):
-        finalColumnNamesX.append(dataColumns[i] + '(' + dataTypes[i] + ')')
-    return render_template("select_variables.html", df = df, columns = finalColumnNamesX.sort())
+    for i in range(len(df.columns)):
+        finalColumnNamesX.append(df.columns[i] + '(' + str(df.dtypes[i]) + ')')
+
+    # seperate name and values 
+    finalColumnNamesX.sort()
+    finalColumnValuesX = df.columns.sort_values()
+    return render_template("select_variables.html", df = df, columns = zip(finalColumnNamesX,finalColumnValuesX))
 
 #Select y-variables among checkboxes
 @app.route("/select_y",methods = ["GET","POST"])
 def select_y():
     if request.method == 'POST':
         return """ SIKE """
-    finalColumnNamesY = list(set(finalColumnNamesX) - set(selected))
-    return render_template("select_y_variable.html", df = df2, columns = finalColumnNamesY.sort())
+
+    finalColumnNamesY= []
+    possibleDf =df.drop(selected,axis=1)
+    for i in range(len(possibleDf.columns)):
+        finalColumnNamesY.append(possibleDf.columns[i] + '(' + str(possibleDf.dtypes[i]) + ')')
+    finalColumnNamesY.sort()
+    finalColumnValuesY = possibleDf.columns.sort_values()
+    return render_template("select_y_variable.html", df = df, columns = zip(finalColumnNamesY,finalColumnValuesY))
 
 if __name__ == "__main__":
     app.run(debug=True)
