@@ -64,8 +64,8 @@ body {
 <button type='button' onClick='toggle(this)'>Toggle All</button>
 <ul class='checkboxes'>
 {% for col in columns %}
-<li><input type="checkbox" name="hello" value= {{ col }} checked>
-    {{ col }}</li>
+<li><input type="checkbox" name="hello" value= {{ col[1] }} checked>
+    {{ col[0] }}</li>
 {% endfor %}
 </ul>
 <input type="submit" class='sumbit'>
