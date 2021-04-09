@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from flask import Flask, request, redirect, url_for,render_template
 from werkzeug.utils import secure_filename
-from utils import *
+from helper.utils import *
 
 UPLOAD_FOLDER = 'C:\\Users\\kargi\\Flask Practi e\\basic-upload\\datasets'
 ALLOWED_EXTENSIONS = set(['txt', 'csv'])
@@ -15,22 +15,22 @@ selected = []
 app = Flask(__name__) 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     global df
     if request.method == 'POST':
 
         # check if the post request has the file part
+        print(request.files)
         if 'file' not in request.files:
-            flash('No file part')
-            return redirect(request.url)
+            #flash('No file part')
+            return render_template("upload_file.html",errors = ['No file is submitted!'])
         file = request.files['file']
 
         # check if user does not send any file
         if file.filename == '':
-            flash('No selected file')
-            return redirect(request.url)
+            #flash('No selected file')
+            return render_template("upload_file.html",errors = ['No file is selected!'])
 
         # a valid file is submitted. 
         if file and allowed_file(file.filename):
@@ -40,8 +40,10 @@ def upload_file():
             print(file_path)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
+            # get delimitter and qualifier form the form.
             delimitter = request.form['delimitter']
             qualifier = request.form['qualifier']
+
             if request.form.get('is-value-type'):
                 assumption = True
             else:
@@ -54,6 +56,8 @@ def upload_file():
             isLoaded = True
             return render_template("upload_file.html", column_names=df.columns.values, row_data=list(df.head(5).values.tolist()),
                            link_column="Patient ID", zip=zip, isLoaded = isLoaded)
+        else:
+            return render_template("upload_file.html",errors = ['Extension is not correct!'])
     else:                        
         return render_template("upload_file.html")
 
@@ -88,6 +92,11 @@ def select_y():
     finalColumnNamesY.sort()
     finalColumnValuesY = possibleDf.columns.sort_values()
     return render_template("select_y_variable.html", df = df, columns = zip(finalColumnNamesY,finalColumnValuesY))
+
+
+@app.route("/visualize", methods = ["GET","POST"])
+def visualize():
+    return render_template("visualize.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
