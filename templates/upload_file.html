@@ -4,27 +4,175 @@
 <style>
 .yazi{
 	text-align: center;
-	padding-top: 200px;
+	padding-top: 50px;
+  padding-bottom: 50px;
 }
 .choose-file {
-	font-size: 20px;
+	width: 180px;
+	height: 50px;
 }
 .upload{
-	width: 80px;
-	height: 30px;
+	width: 90px;
+	height: 40px;
 }
 body {
-	background: rgba(0, 128, 0, 0.3);
+	background:   rgba(112, 203, 255, 0.3);
 }
+div.scrollmenu {
+  background-color: rgb(28, 134, 18);
+  overflow: auto;
+  white-space: nowrap;
+}
+
+div.scrollmenu a {
+  display: inline-block;
+  color: white;
+  text-align: center;
+  padding: 14px;
+  text-decoration: none;
+}
+
+div.scrollmenu a:hover {
+  background-color: rgb(238, 4, 4);
+}
+
+/* Navbar container */
+.navbar {
+  overflow: hidden;
+  background-color: #333;
+  font-family: Arial;
+  border-radius: 10px;
+}
+
+/* Links inside the navbar */
+.navbar a {
+  float: left;
+  font-size: 16px;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+/* The dropdown container */
+.dropdown {
+  float: left;
+  overflow: hidden;
+}
+
+/* Dropdown button */
+.dropdown .dropbtn {
+  font-size: 16px;
+  border: none;
+  outline: none;
+  color: white;
+  padding: 14px 16px;
+  background-color: inherit;
+  font-family: inherit; /* Important for vertical align on mobile phones */
+  margin: 0; /* Important for vertical align on mobile phones */
+}
+
+/* Add a red background color to navbar links on hover */
+.navbar a:hover, .dropdown:hover .dropbtn {
+  background-color: red;
+}
+
+/* Dropdown content (hidden by default) */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+  float: none;
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+
+}
+
+/* Add a grey background color to dropdown links on hover */
+.dropdown-content a:hover {
+  background-color: #ddd;
+}
+
+/* Show the dropdown menu on hover */
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
 </style>
 </head>
+
+<div class="navbar">
+  <a href="/">Load Dataset</a>
+  <a href="{{ url_for('visualize') }}">Visualize</a>
+  <div class="dropdown">
+    <button class="dropbtn">Attributes
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="{{ url_for('select_variables') }}">Choose X</a>
+      <a href="{{ url_for('select_y') }} ">Choose Y</a>
+    </div>
+  </div>
+</div>
+
+
 <div class='yazi'>
     <h1>Upload New File (Allowed extensions : csv) </h1>
+    <p><h3>Upload a text file that accepts excel export.</h3></p>
     <form action="" method=post enctype=multipart/form-data>
       <p><input type=file name=file>
-      <p>Delimitter <input type = "text" name = "delimitter" /></p>
+      <p>Delimitter (default = ,) <input type = "text" name = "delimitter" /></p>
+      <p>Qualifier (default = "") <input type = "text" name = "qualifier" /></p>
       <p>First row value types <input type="checkbox" name="is-value-type" value = 1 checked></p>
-      <input type=submit value=Upload class='upload'>
+      <input type=submit value=Upload>
     </form>
 </div>
+
+<div class="scrollmenu">
+  <table>
+      <tr>
+          {% for col in column_names %}
+          <th>{{col}}</th>
+          {% endfor %}
+      </tr>
+      {% for row in row_data %}
+      <tr>
+          {% for col, row_ in zip(column_names, row) %}
+          {% if col == link_column %}
+          <td>
+              <button type="submit" value={{ row_ }} name="person_id" form="patient_form" class="patient_button">
+                  {{ row_ }}
+              </button>
+          </td>
+          {% else %}
+          <td>{{row_}}</td>
+          {% endif %}
+          {% endfor %}
+      </tr>
+      {% endfor %}
+  
+  </table>
+</div>
+
+<div class='yazi'>
+  {% if isLoaded %}
+    <h2>Data is loaded successfully! </h2>
+  {% endif %}
+
+  {% for error in errors %}
+    <h2> {{ error }} </h2>
+  {% endfor %}
+</div>
+
+
 </html>
