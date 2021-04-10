@@ -115,11 +115,20 @@ body {
     <h1>Select variables that will be used in training </h1>
 <form method="post">
 <!--> <button type='button' onClick='toggle(this)'>Toggle All</button><!-->
-<ul class='checkboxes'>
-{% for col in columns %}
-<li><input type="checkbox" name="hello" value= {{ col[1] }} checked>
-    {{ col[0] }}</li>
+<table>
+<tr>
+{% for type in types %}
+<td>type</td>
 {% endfor %}
-</ul>
+</tr>
+{% for column in columns %}
+<tr>
+{% for elem in column %}
+<td><input type="checkbox" name="hello" value= {{ elem }} checked>
+    {{ elem }}</td>
+{% endfor %}
+</tr>
+{% endfor %}
+</table>
 <input type="submit" class='sumbit'>
 </form>

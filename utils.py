@@ -5,6 +5,7 @@ from run import ALLOWED_EXTENSIONS
 from flask_wtf import FlaskForm
 from wtforms import StringField,PasswordField, SubmitField,BooleanField
 from wtforms.validators import DataRequired,Length,Email,EqualTo
+from collections import OrderedDict
 
 def load_dataset(path,delimitter = ",",qualifier = '"',assumption = False):
     """
@@ -108,3 +109,23 @@ def choose_attributes(df,attributes):
 class StringForm(FlaskForm):
     delimetter = StringField('Username', validators = [DataRequired()])
     submit = SubmitField("Sign Up")
+
+def groupColumns(df):
+    dtypeArr = []
+    columnArr = []
+    lens = []
+    returnArr = []
+    type_dct = {str(k): list(v) for k, v in df.groupby(df.dtypes, axis=1)}
+    type_dct = OrderedDict(sorted(type_dct.items(), key=lambda i: -len(i[1])))
+    for types in type_dct:
+        type_dct[types].sort()
+        columnArr.append(type_dct[types])
+        dtypeArr.append(types)
+		lens.append(len(type_dct[types]))
+    for i in range(lens.max()):
+        arr = []
+        for k in range(len(dtypeArr)):
+            if(i < lens[k]):
+                arr.append(columnArr[k][i])
+        returnArr.append(arr)
+    return dtypeArr, returnArr

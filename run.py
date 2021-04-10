@@ -69,15 +69,8 @@ def select_variables():
         selected = request.form.getlist('hello')
         return redirect(url_for('select_y'))
 
-    #join types and column names and send it to page
-    finalColumnNamesX= []
-    for i in range(len(df.columns)):
-        finalColumnNamesX.append(df.columns[i] + '(' + str(df.dtypes[i]) + ')')
-
-    # seperate name and values 
-    finalColumnNamesX.sort()
-    finalColumnValuesX = df.columns.sort_values()
-    return render_template("select_variables.html", df = df, columns = zip(finalColumnNamesX,finalColumnValuesX))
+    dtypes, cols = groupColumns(df)
+    return render_template("select_variables.html",types = dtypes, columns = cols)
 
 #Select y-variables among checkboxes
 @app.route("/select_y",methods = ["GET","POST"])
@@ -87,11 +80,9 @@ def select_y():
 
     finalColumnNamesY= []
     possibleDf =df.drop(selected,axis=1)
-    for i in range(len(possibleDf.columns)):
-        finalColumnNamesY.append(possibleDf.columns[i] + '(' + str(possibleDf.dtypes[i]) + ')')
-    finalColumnNamesY.sort()
-    finalColumnValuesY = possibleDf.columns.sort_values()
-    return render_template("select_y_variable.html", df = df, columns = zip(finalColumnNamesY,finalColumnValuesY))
+    
+    dtypes, cols = groupColumns(possibleDf)
+    return render_template("select_y_variable.html", types = dtypes, columns = cols)
 
 
 @app.route("/visualize", methods = ["GET","POST"])
