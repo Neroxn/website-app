@@ -109,27 +109,19 @@ body {
       <a href="{{ url_for('select_y') }} ">Choose Y</a>
     </div>
   </div>
-    <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
+  <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
 </div>
 
 
-    <h1>Select variables that will be used in training </h1>
+    <h1>Select training algorithm </h1>
 <form method="post">
-<!--> <button type='button' onClick='toggle(this)'>Toggle All</button><!-->
-<table>
-<tr>
-{% for type in types %}
-<td> {{ type }} </td>
-{% endfor %}
-</tr>
-{% for column in columns %}
-<tr>
-{% for elem in column %}
-<td><input type="checkbox" name="hello" value= {{ elem }} checked>
-    {{ elem }}</td>
-{% endfor %}
-</tr>
-{% endfor %}
-</table>
+<div class="custom-select" style="width:200px;">
+  <select class= "selector" name= 'selector'>
+    <option value="0" disabled="disabled">Select algorithm:</option>
+    <option value="1">SVM</option>
+    <option value="2">RandomForest</option>
+    <option value="3">AdaBoost</option>
+  </select>
+</div>
 <input type="submit" class='sumbit'>
 </form>

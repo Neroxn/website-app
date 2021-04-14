@@ -11,7 +11,8 @@ ALLOWED_EXTENSIONS = set(['txt', 'csv'])
 #Global variables that can bee accesed
 df = pd.DataFrame()
 dataColumns = pd.DataFrame()
-selected = []
+selectedX = []
+selectedY = []
 app = Flask(__name__) 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -64,9 +65,9 @@ def upload_file():
 #Select x-variables among checkboxes
 @app.route("/select_variables", methods = ["GET","POST"])
 def select_variables():
-    global selected,df
+    global selectedX,df
     if request.method == 'POST':
-        selected = request.form.getlist('hello')
+        selectedX = request.form.getlist('hello')
         return redirect(url_for('select_y'))
 
     if(len(df) != 0):
@@ -79,11 +80,13 @@ def select_variables():
 #Select y-variables among checkboxes
 @app.route("/select_y",methods = ["GET","POST"])
 def select_y():
+    global selectedY
     if request.method == 'POST':
-        return """ SIKE """
+        selectedY = request.form.getlist('hello')
+        return redirect(url_for('selectAlgo'))
 
     finalColumnNamesY= []
-    possibleDf =df.drop(selected,axis=1)
+    possibleDf =df.drop(selectedX,axis=1)
     
     if(len(df) != 0):
         dtypes, cols = groupColumns(possibleDf)
@@ -95,6 +98,34 @@ def select_y():
 @app.route("/visualize", methods = ["GET","POST"])
 def visualize():
     return render_template("visualize.html")
+
+@app.route("/selectAlgo", methods = ["GET","POST"])
+def selectAlgo():
+    if request.method == 'POST'
+        selectedAlgo = request.form['selector']
+        
+        if selectedAlgo == 'SVM':
+            return redirect(url_for('SVM'))
+            
+        elif selectedAlgo == 'RandomForest':
+            return redirect(url_for('RandomForest'))
+            
+        elif selectedAlgo == 'Adaboost':
+            return redirect(url_for('Adaboost'))
+        
+    return render_template("select_algo.html")
+
+@app.route("/SVM", methods = ["GET","POST"])
+def SVM():
+    return "To be continued"
+
+@app.route("/RandomForest", methods = ["GET","POST"])
+def RandomForest():
+    return "To be continued"
+
+@app.route("/Adaboost", methods = ["GET","POST"])
+def Adaboost():
+    return "To be continued"
 
 if __name__ == "__main__":
     app.run(debug=True)
