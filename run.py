@@ -56,7 +56,7 @@ def upload_file():
             #return redirect(url_for('select_variables',filename=filename))
             isLoaded = True
             return render_template("upload_file.html", column_names=df.columns.values, row_data=list(df.head(5).values.tolist()),
-                           link_column="Patient ID", zip=zip, isLoaded = isLoaded)
+                           link_column="Patient ID", zip=zip, isLoaded = isLoaded, rowS = df.shape[0], colS = df.shape[1])
         else:
             return render_template("upload_file.html",errors = ['Extension is not correct!'])
     else:                        
@@ -70,7 +70,11 @@ def select_variables():
         selectedX = request.form.getlist('hello')
         return redirect(url_for('select_y'))
 
-    dtypes, cols = groupColumns(df)
+    if(len(df) != 0):
+        dtypes, cols = groupColumns(df)
+    else:
+        dtypes = []
+        cols = []
     return render_template("select_variables.html",types = dtypes, columns = cols)
 
 #Select y-variables among checkboxes
@@ -84,9 +88,12 @@ def select_y():
     finalColumnNamesY= []
     possibleDf =df.drop(selectedX,axis=1)
     
-    dtypes, cols = groupColumns(possibleDf)
-    return render_template("select_y_variable.html", types = dtypes, columns = cols)
-
+    if(len(df) != 0):
+        dtypes, cols = groupColumns(possibleDf)
+    else:
+        dtypes = []
+        cols = []
+    return render_template("select_variables.html",types = dtypes, columns = cols)
 
 @app.route("/visualize", methods = ["GET","POST"])
 def visualize():
