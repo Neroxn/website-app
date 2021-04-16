@@ -110,18 +110,15 @@ body {
     </div>
   </div>
   <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
+  <a href="{{ url_for('SVM') }}">Parameters</a>
 </div>
 
 
-    <h1>Select training algorithm </h1>
-<form method="post">
-<div class="custom-select" style="width:200px;">
-  <select class= "selector" name= 'selector'>
-    <option value="0" disabled="disabled">Select algorithm:</option>
-    <option value="SVM">SVM</option>
-    <option value="RandomForest">RandomForest</option>
-    <option value="Adaboost">Adaboost</option>
-  </select>
-</div>
-<input type="submit" class='sumbit'>
-</form>
+    <h1>Please enter parameters of SVM algorithm</h1>
+<form action="" method=post enctype=multipart/form-data>
+      <p>Kernel (default = "linear") <input type = "text" name = "kernel" /></p>
+      <p>C (default = 1) <input type = "text" name = "C" /></p>
+      <p>(if kernel is NOT linear)Gamma (default = "auto") <input type = "text" name = "gamma" /></p>
+      <p>(if kernel is poly)Degree (default = 4) <input type = "text" name = "degree" /></p>
+      <input type=submit value=Sumbit>
+    </form>
