@@ -101,7 +101,7 @@ def visualize():
 
 @app.route("/selectAlgo", methods = ["GET","POST"])
 def selectAlgo():
-    if request.method == 'POST'
+    if request.method == 'POST':
         selectedAlgo = request.form['selector']
         
         if selectedAlgo == 'SVM':
