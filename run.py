@@ -117,15 +117,24 @@ def selectAlgo():
 
 @app.route("/SVM", methods = ["GET","POST"])
 def SVM():
-    return "To be continued"
+    if request.method == 'POST':
+        return "To be continued"
+        
+    return render_template("SVM.html")
 
 @app.route("/RandomForest", methods = ["GET","POST"])
 def RandomForest():
-    return "To be continued"
+    if request.method == 'POST':
+        return "To be continued"
+        
+    return render_template("RandomForest.html")
 
 @app.route("/Adaboost", methods = ["GET","POST"])
 def Adaboost():
-    return "To be continued"
-
+    if request.method == 'POST':
+        return "To be continued"
+        
+    return render_template("Adaboost.html")
+    
 if __name__ == "__main__":
     app.run(debug=True)
