@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.svm import SVR
-from sklearn.emsemble import RandomForestRegressor, AdaBoostRegressor
+from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor
 
 def applySVM(xTrain, yTrain, kernel= 'linear', c= 1, gamma= 'auto', degree= 4):
     """
