@@ -1,6 +1,19 @@
 import numpy as np  
 import pandas as pd
 from sklearn import preprocessing
+def stringDecoder(y, arrEncoder, selectedY):
+    decodedY = []
+    
+    for i in range(len(selectedY)):
+        if(len(selectedY) > 1):
+            for column, encoder in arrEncoder:
+                if column == selectedY[i]:
+                    decodedY.append(encoder.inverse_transform(y[i]))
+        else:
+            for column, encoder in arrEncoder:
+                if column == selectedY[i]:
+                    decodedY = encoder.inverse_transform(y)
+    return decodedY
 
 def stringEncoder(df, columns):
 	"""
@@ -23,8 +36,10 @@ def dropNanAndDuplicates(df, notNanPercantage = 1):
     df = df.drop_duplicates()
     return df
 
-def scale(df):
-    scaler = MinMaxScale(feature_range=(0,1))
+def scale(df, selectedY):
+    scaler = preprocessing.MinMaxScaler(feature_range=(0,1))
+    scalerY = preprocessing.MinMaxScaler(feature_range=(0,1))
+    scalerY.fit(df.loc[:,selectedY])
     scaled = scaler.fit_transform(df)
     df = pd.DataFrame(scaled, columns= df.columns, index= df.index)
-    return df, scaler
+    return df, scaler, scalerY
