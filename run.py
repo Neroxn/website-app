@@ -297,7 +297,7 @@ def Adaboost():
         df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
         trainX, testX, trainY, testY = train_test_split(df2[selectedX], df2[selectedY], 
                                                         test_size= 0.15, shuffle= True)
-        model = applyAdaBoost(trainX, trainY, numberEstimator= numberEstimator, learningRate = learningRate, loss=loss)
+        model = applyAdaBoost(trainX, trainY, numberEstimator= numberEstimator, learningRate= learningRate, loss=loss)
         
         #Train is done, predict time
         result = model.predict(testX).reshape((len(testX),-1))
@@ -393,12 +393,28 @@ def dist_graph():
     if request.method == "POST":
         print(request.form)
         if 'selected_parameter' in request.form:
-            numberBin = 20 if 'numberBin' not in request.form else int(request.form['numberBin'])
+            numberBin = 20 if (request.form['numberBin'].isnumeric() == False) else int(request.form['numberBin'])
             return dist_plot(df.select_dtypes(exclude = ['object']),request.form['selected_parameter'],numberBin)
         else:
             return render_template('graphs/dist_plot.html',columns =df.select_dtypes(exclude = ['object']).columns, error = "Please choose the parameter for histogram!")
     return render_template('graphs/dist_plot.html',columns = df.select_dtypes(exclude = ['object']).columns)
 
-        
+@app.route('/bar_graph', methods = ["GET","POST"])
+def bar_graph():
+    global df
+    if request.method == "POST":
+        print(request.form)
+        if 'selected_parameter' in request.form:
+            if 'selected_type' in request.form:
+                selectedType = request.form["selected_type"]
+            else:
+                selectedType = "Horizontal"
+
+            return bar_plot(df.select_dtypes(include = ['object']),request.form['selected_parameter'],selectedType)
+        else:
+            return render_template('graphs/bar_plot.html',columns =df.select_dtypes(include = ['object']).columns, error = "Please choose the parameter for bar graph!")
+    return render_template('graphs/bar_plot.html',columns = df.select_dtypes(include = ['object']).columns)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
