@@ -357,3 +357,51 @@ def dist_plot(df,parameter,bins = 20):
 
 def nan_plot(df):
     return "Show Nan"
+
+
+def bar_plot(data,selected_parameter, option = 'Vertical'):
+    # Draw a chart
+    df_pie_agg = pd.DataFrame()
+    
+    data = data.dropna(subset=[selected_parameter])
+    objects_data = data[selected_parameter].unique()
+    val_count = []
+    for vals in objects_data:
+        val_count += [data[data[selected_parameter] == vals].shape[0]]
+
+    df_pie_agg = pd.DataFrame()
+    df_pie_agg["Parameter"] = objects_data
+    df_pie_agg["Count"] = val_count
+    print(objects_data,val_count)
+
+    if option == 'Vertical':
+        p = figure(title='Vertical Bar Chart', x_range=df_pie_agg["Parameter"], 
+                plot_width=900, plot_height=600,
+                y_axis_label='Count')
+
+        p.vbar(x=df_pie_agg["Parameter"], width = 0.75, bottom=0, top= df_pie_agg["Count"], 
+            fill_color='black', line_color='white')
+
+    else:
+        p = figure(title='Horizontal Bar Chart', y_range=df_pie_agg["Parameter"], 
+                plot_width=900, plot_height=600,
+                y_axis_label='Count')
+
+        p.hbar(y=df_pie_agg["Parameter"],height = 0.75, left=0, right= df_pie_agg["Count"], 
+            fill_color='black', line_color='white')
+
+
+        
+    p.xaxis.major_label_orientation = 1.57
+    script, div = components(p)
+
+    return render_template(
+    'graphs/bar_plot.html',
+    plot_script=script,
+    plot_div=div,
+    js_resources=INLINE.render_js(),
+    css_resources=INLINE.render_css(),
+    graphSelected = True,
+    columns = data.columns,
+    selected = selected_parameter
+    ).encode(encoding='UTF-8')
