@@ -2,6 +2,12 @@ import numpy as np
 from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor
 
+def modelPredict(xTest, model):
+    result = []
+    for i in range(len(xTest)):
+        result.append(model.predict(xTest[i]))
+    return result
+
 def applySVM(xTrain, yTrain, kernel= 'linear', c= 1, gamma= 'auto', degree= 4):
     """
     Applies SVM on training set and return model.

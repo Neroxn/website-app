@@ -6,22 +6,29 @@ from bokeh.io import curdoc
 from bokeh.resources import INLINE
 from bokeh.embed import components
 from bokeh.plotting import figure, output_file, show
-from flask import Flask, request, redirect, url_for,render_template
+from flask import Flask, request, redirect, url_for,render_template,Response
 from werkzeug.utils import secure_filename
 from utils import *
 from modelTrain import *
 from preprocess import *
 from sklearn.model_selection import train_test_split
+
+#App setup
 UPLOAD_FOLDER = 'C:\\Users\\kargi\\Flask Practi e\\website-app-main-2\\datasets'
 ALLOWED_EXTENSIONS = set(['txt', 'csv'])
+app = Flask(__name__) 
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-#Global variables that can bee accesed
-df = pd.DataFrame()
+### These variables will be fixed later on as they are global and will cause errors. ###
+df = pd.read_csv("DataCasiaEhr.csv")
 dataColumns = pd.DataFrame()
 selectedX = []
 selectedY = []
-app = Flask(__name__) 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+user_log = []
+model = None
+graph = None
+selectedModel = None
+########################################################################################
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
@@ -121,6 +128,8 @@ def selectAlgo():
 
 @app.route("/SVM", methods = ["GET","POST"])
 def SVM():
+    global model,selectedModel
+    selectedModel = "SVM"
     if request.method == 'POST':
         #Check whether kernel is valid
         if not request.form['kernel'] in ['linear', 'rbf', 'poly','sigmoid']:
@@ -198,6 +207,8 @@ def SVM():
 
 @app.route("/RandomForest", methods = ["GET","POST"])
 def RandomForest():
+    global model,selectedModel
+    selectedModel = "RandomForest"
     if request.method == 'POST':
     
         #Check whether number of estimator is valid
@@ -260,6 +271,8 @@ def RandomForest():
 
 @app.route("/Adaboost", methods = ["GET","POST"])
 def Adaboost():
+    global model,selectedModel
+    selectedModel = "Adaboost"
     if request.method == 'POST':
     
         #Check whether number of estimator is valid
@@ -306,19 +319,6 @@ def Adaboost():
         
         return redirect(url_for('results', actual= testY, prediction= result))
             
-    return render_template("algorithms/Adaboost.html")
-
-@app.route("/results", methods = ["GET","POST"])
-def results():
-    if request.method == "POST":
-        return "To be continued"
-
-    return "To be continued"
-        
-    prediction = request.args['prediction']
-    actual = request.args['actual']
-    return "To be continued"
-        
     return render_template("algorithms/Adaboost.html")
     
 @app.route('/visualize',methods = ["GET","POST"])
@@ -379,9 +379,8 @@ def correlation_graph():
 def pie_graph():
     global df
     if request.method == "POST":
-        print(request.form)
-        if "selected_parameter" in request.form:
-            return pie_plot(df.select_dtypes(include = ["object"]),request.form['selected_parameter'])
+        if request.form.getlist("parameters") != []:
+            return pie_plot(df.select_dtypes(include = ["object"]),request.form.getlist("parameters"))
         else:
             return render_template('graphs/pie_plot.html',columns =  df.select_dtypes(include = ["object"]).columns,error = "Please select parameters to process.")
 
@@ -404,16 +403,154 @@ def bar_graph():
     global df
     if request.method == "POST":
         print(request.form)
-        if 'selected_parameter' in request.form:
+        if request.form.getlist("parameters") != []:
             if 'selected_type' in request.form:
                 selectedType = request.form["selected_type"]
             else:
                 selectedType = "Horizontal"
 
-            return bar_plot(df.select_dtypes(include = ['object']),request.form['selected_parameter'],selectedType)
+            return bar_plot(df.select_dtypes(include = ['object']),request.form.getlist("parameters"),selectedType)
         else:
             return render_template('graphs/bar_plot.html',columns =df.select_dtypes(include = ['object']).columns, error = "Please choose the parameter for bar graph!")
     return render_template('graphs/bar_plot.html',columns = df.select_dtypes(include = ['object']).columns)
+
+
+@app.route("/pca_transform", methods = ["GET","POST"])
+def pca_transform():
+    global user_log
+    if request.method == "POST":
+        model_selected = df #Selected df as default, this will be changed to model selection later on.
+        n_of_component = int(request.form["n_component"]) 
+        print(request.form) 
+
+        #Check if variance ratio is given
+        if request.form["variance_ratio"] != "":
+            variance_ratio = float(request.form["variance_ratio"])
+        else:
+            variance_ratio = None
+
+        #Drop NaN-values (This will be fixed later as it causes error) and transform the data
+        model_selected.dropna(axis=1,inplace=True)
+        if int(n_of_component) > len(model_selected):
+            n_of_component = len(model_selected)
+        
+        elif int(n_of_component) <= 0:
+             return render_template("transformation/pca_transform.html", columns = model_selected.columns,error = "Invalid number of component! Enter a positive number.")
+
+        new_df,pca = PCA_transformation(data = model_selected, reduce_to = n_of_component, var_ratio = variance_ratio)
+
+        #This user-log system will be changed later on.
+        user_log += [("PCA_Transformation","model_0",
+        "Number of component in dataframe is reduced from {} to {}".format(model_selected.shape[1],new_df.shape[1]))]
+        print(user_log)
+        return PCA_transformation_describe(new_df,pca)
+
+    return render_template("transformation/pca_transform.html")
+
+
+@app.route("/create_column", methods = ["GET","POST"])
+def create_column():
+    global user_log
+    if request.method == "POST":
+
+        #Catch parameters
+        selected_model = df
+        selected_parameters = request.form.getlist("selected_parameters")
+        selected_mode = request.form["selected_mode"]
+        delete_columns = int(request.form["delete_columns"])
+        new_column_name = request.form["new_column_name"]
+        
+        if new_column_name in selected_model.columns: # -- check if column name exist
+            return render_template("transformation/create_column.html", columns = selected_model.columns,error = "This column name is already exist. Please enter a non-exist name.")
+        elif new_column_name == "": # -- check if column name is not entered
+            return render_template("transformation/create_column.html", columns = selected_model.columns,error = "Column name is not selected!")
+
+        if selected_parameters == []: # -- no parameter is given
+                return render_template("transformation/create_column.html", columns = selected_model.columns,error = "Please select parameters!")
+        
+        new_df = combine_columns(data = selected_model, selected_columns = selected_parameters,
+        new_column_name = new_column_name, mode = selected_mode, delete_column = delete_columns)
+            
+        return render_template("transformation/create_column.html", columns = new_df.columns)
+
+
+
+
+    return render_template("transformation/create_column.html", columns = df.columns)
+
+@app.route("/filter_transform", methods = ["GET","POST"])
+def filter_transform():
+    """
+    Later on.
+    """
+    return "Yeah that fits"
+
+
+        
+"""        
+ @app.route('/getPlotCSV') # this is a job for GET, not POST
+def plot_csv():
+    return send_file('outputs/Adjacency.csv',
+                     mimetype='text/csv',
+                     attachment_filename='Adjacency.csv',
+                     as_attachment=True)
+                     
+@app.route("/results", methods = ["GET","POST"])
+def results():
+    global model,graph,selectedX,selectedY,selectedModel
+    if request.method == "GET": 
+        if model != None:
+            return_result_graph(model,selectedModel) #This will return graph and upload file option
+        else:
+            return render_template("results.html", error = "Please train the model first!", modelExist = False)
+
+    elif request.method == "POST":
+        # check if the post request has the file part
+        print(request.files)
+        if 'file' not in request.files:
+            #flash('No file part')
+            return render_template("results.html",error = 'No file is submitted!')
+        file = request.files['file']
+
+        # check if user does not send any file
+        if file.filename == '':
+            #flash('No selected file')
+            return render_template("results.html",error = 'No file is selected!')
+
+        # a valid file is submitted. 
+        if file and allowed_file(file.filename):
+            # construct the file path
+            filename = secure_filename(file.filename)
+            file_path = UPLOAD_FOLDER + "\\" + file.filename
+            print(file_path)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+            # get delimitter and qualifier form the form.
+            delimitter = request.form['delimitter']
+            qualifier = request.form['qualifier']
+            yExist = request.form["is-y-exist"]
+            if request.form.get('is-value-type'):
+                assumption = True
+            else:
+                assumption = False
+
+            # read the file
+            dataTypes, dataColumns, df = load_dataset(file_path,delimitter=delimitter,qualifier = qualifier, assumption=assumption)
+
+            ##################################
+            #Check if parameters are suitable#
+            ##################################
+            
+            if yExist:
+                return proccess_and_show(model = model, selectedX = selectedX, selectedY = selectedY, testX = df, selectedModel = selectedModel) 
+            else:
+                return proccess_and_show(model = model, selectedX = selectedX, selectedY = [], testX = df, selectedModel = selectedModel) 
+
+        else:
+            return return_result_graph(model,selectedModel)
+
+    return "To be continued"
+"""        
 
 
 if __name__ == "__main__":

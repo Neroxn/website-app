@@ -142,7 +142,8 @@ def groupColumns(df):
 
 def scatter_plot(df,x_name,y_name):
 #create the graph
-    fig = figure(plot_height=600, plot_width=720)
+    TOOLS = "box_select,lasso_select,pan,wheel_zoom,box_zoom,reset,help,save"
+    fig = figure(plot_height=600, plot_width=720, tools = TOOLS)
     source = ColumnDataSource()
     fig.circle(x="x", y="y", source=source, size=5,line_color=None)
 
@@ -168,6 +169,7 @@ def scatter_plot(df,x_name,y_name):
     ).encode(encoding='UTF-8')
 
 def scatter_matrix(dataset,features):
+    TOOLS = "box_select,lasso_select,pan,wheel_zoom,box_zoom,reset,help,save"
     dataset_selected = dataset[features]
     dataset_source = ColumnDataSource(data=dataset)
     scatter_plots = []
@@ -193,7 +195,7 @@ def scatter_matrix(dataset,features):
 
             scatter_plots.append(p)
 
-    grid = gridplot(scatter_plots, ncols = len(dataset_selected.columns))
+    grid = gridplot(scatter_plots, ncols = len(dataset_selected.columns), tools = TOOLS)
 
     script, div = components(grid)
     return render_template(
@@ -235,7 +237,7 @@ def correlation_plot(df,selected_parameters):
         palette=Viridis256, low=data_corr.value.min(), high=data_corr.value.max())
 
     # Define a figure and tools
-    TOOLS = "box_select,lasso_select,pan,wheel_zoom,box_zoom,reset,help"
+    TOOLS = "box_select,lasso_select,pan,wheel_zoom,box_zoom,reset,help,save"
     p = figure(
         tools=TOOLS,
         plot_width=1500,
@@ -276,33 +278,50 @@ def correlation_plot(df,selected_parameters):
     columns = df.columns
     ).encode(encoding='UTF-8')
 
+
+def create_feature_matrix(data,parameters):
+    """
+    Create feature matrix with objects. Example:
+    If parameters = [gender,eye]
+    Resulting list should be [[M,LEFT],[M,RİGHT],[W,LEFT],[W,RİGHT]]
+    """
+    import itertools 
+
+    unique_list = []
+    for parameter in parameters: # Collect unique parameters
+        unique_list += [data[parameter].unique()]
+
+
+    all_parameter_permutations = list(itertools.product(*unique_list)) # Create permutation of features
+    result = []
+    for permutation in all_parameter_permutations: #Find the count of all conditions
+        condition = np.full(len(data),True)
+        name = ""
+        for i in range(len(parameters)):
+            condition = (condition & (data[parameters[i]] == permutation[i]))
+            name += (parameters[i] + "=" + str(permutation[i]) + ",")
+        result += [[name,data.loc[condition].shape[0]]]
+    return result   
+
 def pie_plot(data,selected_parameter, sort_by_values = False):
     from math import pi 
     from bokeh.transform import cumsum 
     from bokeh.palettes import inferno
-    df_pie_agg = pd.DataFrame()
+    result = create_feature_matrix(data,selected_parameter)
+    df_pie_agg = pd.DataFrame(result,columns = ["Parameter","Count"])
     
-    objects_data = data[selected_parameter].unique()
-    val_count = []
-
-    for vals in objects_data:
-        val_count += [data[data[selected_parameter] == vals].shape[0]]
-    print(objects_data,val_count)
-    df_pie_agg = pd.DataFrame()
-    df_pie_agg["Parameter"] = objects_data
-    df_pie_agg["Count"] = val_count
-    print(val_count)
     # Add angles based on Win Count so each wedge is the right size
     df_pie_agg['Angle'] = df_pie_agg['Count']/df_pie_agg['Count'].sum() * 2*pi
-    df_pie_agg['color'] = inferno(len(val_count))
+    df_pie_agg['color'] = inferno(df_pie_agg.shape[0])
     
     if sort_by_values:
         df_pie_agg = df_pie_agg.sort_values(by = 'Count', ascending = False)
 
+    TOOLS = "box_select,lasso_select,pan,wheel_zoom,box_zoom,reset,help,save"
     # Draw a chart
     p = figure(title='Pie Chart', x_range=(-0.5, 1.0),
-            plot_width=800, plot_height=600, 
-            toolbar_location=None, tooltips="@Parameter: @{Count}") 
+            plot_width=800, plot_height=600,tools = TOOLS, 
+            toolbar_location="below", tooltips="@Parameter: @{Count}") 
 
     p.wedge(x=0.1, y=1, radius=0.4,
             start_angle=cumsum('Angle', include_zero=True), 
@@ -335,10 +354,10 @@ def dist_plot(df,parameter,bins = 20):
     
     # Use numpy to create histogram bins
     hist, edges = np.histogram(df[parameter], bins=bins)
-
+    TOOLS = "box_select,lasso_select,pan,wheel_zoom,box_zoom,reset,help,save"
     # Draw a chart
     p = figure(title='Histogram', plot_width=800, plot_height=600,
-            x_axis_label=parameter, y_axis_label='Count')
+            x_axis_label=parameter, y_axis_label='Count', tools = TOOLS)
 
     p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], line_color='white', fill_color='black')
 
@@ -361,34 +380,25 @@ def nan_plot(df):
 
 def bar_plot(data,selected_parameter, option = 'Vertical'):
     # Draw a chart
-    df_pie_agg = pd.DataFrame()
-    
-    data = data.dropna(subset=[selected_parameter])
-    objects_data = data[selected_parameter].unique()
-    val_count = []
-    for vals in objects_data:
-        val_count += [data[data[selected_parameter] == vals].shape[0]]
-
-    df_pie_agg = pd.DataFrame()
-    df_pie_agg["Parameter"] = objects_data
-    df_pie_agg["Count"] = val_count
-    print(objects_data,val_count)
+    TOOLS = "box_select,lasso_select,pan,wheel_zoom,box_zoom,reset,help,save"
+    result = create_feature_matrix(data,selected_parameter)
+    df_pie_agg = pd.DataFrame(result,columns = ["Parameter","Count"])
 
     if option == 'Vertical':
         p = figure(title='Vertical Bar Chart', x_range=df_pie_agg["Parameter"], 
                 plot_width=900, plot_height=600,
-                y_axis_label='Count')
+                y_axis_label='Count',tooltips="@Parameter: @{Count}",tools = TOOLS)
 
-        p.vbar(x=df_pie_agg["Parameter"], width = 0.75, bottom=0, top= df_pie_agg["Count"], 
-            fill_color='black', line_color='white')
+        p.vbar(x="Parameter", width = 0.75, bottom=0, top= "Count", 
+            fill_color='black', line_color='white',source = df_pie_agg)
 
     else:
         p = figure(title='Horizontal Bar Chart', y_range=df_pie_agg["Parameter"], 
                 plot_width=900, plot_height=600,
-                y_axis_label='Count')
+                y_axis_label='Count',tooltips="@Parameter: @{Count}", tools = TOOLS)
 
-        p.hbar(y=df_pie_agg["Parameter"],height = 0.75, left=0, right= df_pie_agg["Count"], 
-            fill_color='black', line_color='white')
+        p.hbar(y="Parameter",height = 0.75, left=0, right= "Count", 
+            fill_color='black', line_color='white',source = df_pie_agg)
 
 
         
@@ -405,3 +415,214 @@ def bar_plot(data,selected_parameter, option = 'Vertical'):
     columns = data.columns,
     selected = selected_parameter
     ).encode(encoding='UTF-8')
+
+
+def return_result_graph(model,selectedModel):
+    """
+    Parameters:
+    :model: -- Is the model that is trained
+    :selectedModel: -- Return the graph with respect to the selected model
+
+    Steps:
+    Display the result screen with graph. Return template with
+        *) Graph of the train/valid-data-metric
+        *) Upload file is now reachable
+    """
+    return None
+
+def proccess_and_show(model,testX,selectedX,selectedY,selectedModel):
+    """
+    Parameters:
+    :model: -- Is the model that is trained
+    :testX: -- Test, unproccess data for our machine learning model
+    :yExist: -- If yExist, also show the predictions vs real result
+    :selectedModel: -- Preprocess with respect to the selectedModel
+
+    Steps:
+    1)Preprocess the given data and predict it with model.
+    2)Return template with 
+        *) Graph of the test-data-metric 
+        *) Prediction of the test-data
+
+    """
+    return None
+
+def PCA_transformation(data, reduce_to = None, var_ratio = None):
+    """
+    Parameters:
+    :data: -- Dataframe that is given
+    :reduce_to: -- The final dimension after PCA transformation
+    :var_ratio: -- If given, reduce until
+    Apply Principal Component Analysis (PCA) to Dataset.
+    Dataset is first standirtized. Then Dataset is reduced to n = reduce_to-D dimension. 
+    If the data has an object column, error should be given. Or assume that it is intended and reduce the only numerical columns
+    Optional : if 
+    """
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.decomposition import PCA
+
+    if reduce_to == None:
+        reduce_to = 0.80 # -- default ratio value
+    
+    # Ready the dataset and variables
+    if var_ratio != None:
+        if var_ratio <= 1 and var_ratio >= 0:
+            reduce_to = var_ratio
+        else:
+            print("Error..")
+            return None
+
+
+    numerical_df = data.select_dtypes(exclude = ["object"])
+    scaler = StandardScaler()
+    pca = PCA(n_components=reduce_to)
+
+    # Standirtize
+    numerical_df = scaler.fit_transform(numerical_df)
+
+    # PCA Analysis
+    pca.fit(numerical_df)
+    reduced_df = pca.transform(numerical_df)
+
+    # Return dataframe
+    column_names = ["var" + str(i) for i in range(0,reduced_df.shape[1])]
+    reduced_df = pd.DataFrame(reduced_df,columns = column_names)
+    return reduced_df,pca
+
+def PCA_transformation_describe(new_df,pca):
+    """
+    Return a line graph by using bokeh. 
+    :pca: -- pca module that contains variance ratios
+    :new_df: -- df that is newly transformed
+    """
+
+    #Create the graph
+    p = figure(title = "Variance Ratio", plot_width = 1200,plot_height = 800,
+    x_axis_label = "Number of components",y_axis_label = "Cumilative Ratio")
+    
+    line_y = np.cumsum(pca.explained_variance_ratio_)
+    line_x = range(1,len(line_y)+1)
+    df_line = pd.DataFrame()
+    np.cumsum(pca.explained_variance_ratio_)
+    p.line(x = line_x, y = line_y, color = "black", line_width = 2 )
+    script, div = components(p)
+
+    return render_template(
+    'transformation/pca_transform.html',
+    plot_script=script,
+    plot_div=div,
+    js_resources=INLINE.render_js(),
+    css_resources=INLINE.render_css(),
+    graphSelected = True,
+    ).encode(encoding='UTF-8')
+    #Extra information
+
+
+def concat_columns(data,selected_columns):
+    """
+    :data: -- Dataframe that will be used
+    :selected_columns: -- Selected object columns
+    """
+    return data[selected_columns].apply(lambda x : ','.join(x.dropna().astype(str)),axis=1)
+
+
+def combine_columns(data, selected_columns, new_column_name, mode, delete_column = True):
+    """
+    Parameters:
+    :data: -- Dataframe that is given
+    :selected_columns: -- Subset of the features that will be combined into a single column.
+    :new_column_name: -- Name of the new column:
+    :mode: -- Which operation will be used
+        *) mode = mean -- sum the columns and take avarage of it
+        *) mode = sum -- sum the columns
+        *) mode = differnce -- take the difference of the columns. Two columns must be selected.
+        *) mode = concat -- concat the object columns. An example could be [M,F],[Left,Right] -> MLeft,MRight,FLeft,FRight
+
+    :delete_column: -- If true, discard the used columns. 
+    """
+    selected_df = data[selected_columns]
+
+    if mode == "mean":
+
+        data[new_column_name] = selected_df.sum(axis = 1)/len(selected_columns)
+        
+    elif mode == "sum":
+        data[new_column_name] = selected_df.sum(axis = 1)
+
+    elif mode == "difference":
+        data[new_column_name] = selected_df.iloc[:,0] - selected_df.iloc[:,1]
+
+    elif mode == "concat":
+        concated_columns = concat_columns(data,selected_columns)
+        data[new_column_name] = concated_columns 
+
+    if delete_column:
+        return data.drop(selected_columns,axis = 1)
+    
+    return data
+
+def check_float(potential_float):
+    """
+    Check if given expression is float / number.
+    """
+    try:
+        float(potential_float)
+        return True
+    except ValueError:
+        return False
+
+def handle_actions(data,actions):
+    """
+    Handle the actions and clear the empty inputs and check the errorous inputs.
+    
+    For object variables -- errorous does not exist
+    For continious variables, error can be a non-numerical value
+    """
+    handled_actions = {}
+    
+    for col in data.columns:
+        action_list = actions[col]
+        if data.dtypes[col] == object:
+            handled_actions[col] = action_list
+            continue
+        
+        else:
+            #Both parameters are empty. No action
+            if (action_list[0] == "" and action_list[1] == ""):
+                continue
+                
+            #First parameter is empty. Fill it with minimum (Lower Boundary)
+            if (action_list[0] == "") or (check_float(action_list[0]) == False):
+                action_list[0] = data[col].min()
+                
+            else:
+                action_list[0] = float(action_list[0])
+            
+            #Second parameter is empty. Fill it with maximum (Upper Boundary)
+            if (action_list[1] == "") or (check_float(action_list[1]) == False):
+                action_list[1] = data[col].max()
+                
+            else:
+                action_list[1] = float(action_list[1])
+                
+            
+            handled_actions[col] = action_list
+    return handled_actions
+    
+
+def filter_data(data, actions):
+    """
+    Filter the dataset with given boundaries
+    :data: -- is the dataframe
+    :actions: -- is the list of parameters and the actions that should be taken. 
+    """
+    copy_data = data.copy()
+    handled_actions = handle_actions(data,actions)
+    for column, action in handled_actions.items():
+        if data.dtypes[column] == object: #Datatype is object/discreate
+            condition = data[column].isin(action)
+            
+        else:
+            condition = (data[column] >= action[0]) & (data[column] < action[1])
+        data = data[condition]
+    return copy_data.iloc[data.index]
