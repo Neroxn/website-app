@@ -19,7 +19,7 @@ body {
 	background:   rgba(112, 203, 255, 0.3);
 }
 div.scrollmenu {
-  background-color: rgb(28, 134, 18);
+  background-color: rgb(112, 203, 255, 0.4);
   overflow: auto;
   white-space: nowrap;
 }
@@ -113,7 +113,19 @@ div.scrollmenu a:hover {
 
 <div class="navbar">
   <a href="/">Load Dataset</a>
-  <a href="{{ url_for('visualize') }}">Visualize</a>
+  <div class="dropdown">
+    <button class="dropbtn">Visualize
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="{{ url_for('correlation_graph') }}">Correlation Matrix</a>
+      <a href="{{ url_for('scatter_graph') }} ">Scatter Matrix</a>
+      <a href="{{ url_for('pie_graph') }} ">Pie Graph</a>
+      <a href="{{ url_for('dist_graph') }} ">Histogram</a>
+      <a href="{{ url_for('bar_graph') }} ">Bar Graph</a>
+    </div>
+  </div>
+
   <div class="dropdown">
     <button class="dropbtn">Attributes
       <i class="fa fa-caret-down"></i>
@@ -121,6 +133,9 @@ div.scrollmenu a:hover {
     <div class="dropdown-content">
       <a href="{{ url_for('select_variables') }}">Choose X</a>
       <a href="{{ url_for('select_y') }} ">Choose Y</a>
+      <a href="{{ url_for('pca_transform') }} ">PCA</a>
+      <a href="{{ url_for('create_column') }}">Combine Columns</a>
+      <a href="{{ url_for('filter_transform') }} ">Filter</a>
     </div>
   </div>
     <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
@@ -128,8 +143,8 @@ div.scrollmenu a:hover {
 
 
 <div class='yazi'>
-    <h1>Upload New File (Allowed extensions : csv) </h1>
-    <p><h3>Upload a text file that accepts excel export.</h3></p>
+  <h1>Upload the file for prediction. </h1>
+  <p><h3>Accepted files are TXT exported from Excel and CSV. </h3></p>
     <form action="" method=post enctype=multipart/form-data>
       <p><input type=file name=file>
       <p>Delimitter (default = ,) <input type = "text" name = "delimitter" /></p>
@@ -167,7 +182,7 @@ div.scrollmenu a:hover {
 
 <div class='yazi'>
   {% if isLoaded %}
-    <h2>Data is loaded successfully! </h2>
+    <h2>Data with {{ rowS }} samples and {{ colS }} features is loaded successfully! </h2>
   {% endif %}
 
   {% for error in errors %}
