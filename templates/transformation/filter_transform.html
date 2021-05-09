@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<p>Display some text when the checkbox is checked:</p>
+
+
+<form action="" method="post" style="display:block">
+  {% for col in cols %}
+  <label for="myCheck">Checkbox {{ col }}:</label> 
+  <input type="checkbox" class="myCheck" onclick="myFunction()" value = 1>
+
+  {% if col in objectCols %}
+  <ul class = "text" style = "display:none">
+    <p>Bitch <input type = "text" name = {{ col }} /></p>
+  </ul>
+  {% endif %} 
+  
+  {% if col in objectCols %}
+  <ul class = "text" style = "display:none">
+      <p>Lower Limit <input type = "text" name = {{ col }} /></p>
+      <p>Upper Limit <input type = "text" name = {{ col }} /></p>
+    </ul>
+  {% endif %} 
+  
+  {% endfor %}
+  <input type="submit" class='submit'>
+</form>
+  Haha amk çocuğu
+
+
+<script>
+function myFunction() { 
+  var checkBox = document.getElementsByClassName("myCheck");
+  var text = document.getElementsByClassName("text");
+  var i;
+
+  for(i = 0; i < checkBox.length; i++)
+  {
+    if (checkBox[i].checked == true){    
+      text[i].style.display = "block";
+    } else {
+      text[i].style.display = "none";
+    }
+  }
+}
+</script>
+
+</body>
+</html>
