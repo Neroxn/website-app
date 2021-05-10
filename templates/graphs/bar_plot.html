@@ -163,6 +163,9 @@ label:hover {
     <div class="dropdown-content">
       <a href="{{ url_for('select_variables') }}">Choose X</a>
       <a href="{{ url_for('select_y') }} ">Choose Y</a>
+      <a href="{{ url_for('pca_transform') }} ">PCA</a>
+      <a href="{{ url_for('create_column') }}">Column Transform</a>
+      <a href="{{ url_for('filter_transform') }} ">Filter</a>
     </div>
   </div>
     <a href="{{ url_for('selectAlgo') }}">Algorithms</a>

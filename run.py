@@ -470,7 +470,7 @@ def create_column():
         
         new_df = combine_columns(data = selected_model, selected_columns = selected_parameters,
         new_column_name = new_column_name, mode = selected_mode, delete_column = delete_columns)
-            
+        print(new_df.shape)
         return render_template("transformation/create_column.html", columns = new_df.columns)
 
 
@@ -480,10 +480,13 @@ def create_column():
 
 @app.route("/filter_transform", methods = ["GET","POST"])
 def filter_transform():
-    """
-    Later on.
-    """
-    return "Yeah that fits"
+    if request.method == "POST":
+        actions = {}
+        for col in df.columns:
+                actions[col] = request.form.getlist(col)
+        print(filter_data(df,actions).head(3))
+    return render_template("transformation/filter_transform.html", cols = df.columns, objectCols = df.select_dtypes(include = "object").columns, df = df)
+
 
 
         

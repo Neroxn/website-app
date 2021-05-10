@@ -1,50 +1,227 @@
 <!DOCTYPE html>
-<html>
-<body>
+<html lang="en">
+<head>
+  <script language="JavaScript">
+    function myFunction() {
+      var input, filter, ul, li, la, i, txtValue;
+      input = document.getElementById("myInput");
+      filter = input.value.toUpperCase();
+      ul = document.getElementById("myUL");
+      li = ul.getElementsByTagName("li");
+    
+      for (i = 0; i < li.length; i++) { 
+        la = li[i].getElementsByTagName("label")[0];
+        txtValue = la.textContent || la.innerText; 
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {  
+          li[i].style.display = "";
+        } else {
+          li[i].style.display = "none";
+        }
+      }
+    }
+    function myFunction2() { 
+    var checkBox = document.getElementsByClassName("myCheck");
+    var text = document.getElementsByClassName("text");
+    var i;
 
-<p>Display some text when the checkbox is checked:</p>
-
-
-<form action="" method="post" style="display:block">
-  {% for col in cols %}
-  <label for="myCheck">Checkbox {{ col }}:</label> 
-  <input type="checkbox" class="myCheck" onclick="myFunction()" value = 1>
-
-  {% if col in objectCols %}
-  <ul class = "text" style = "display:none">
-    <p>Bitch <input type = "text" name = {{ col }} /></p>
-  </ul>
-  {% endif %} 
-  
-  {% if col in objectCols %}
-  <ul class = "text" style = "display:none">
-      <p>Lower Limit <input type = "text" name = {{ col }} /></p>
-      <p>Upper Limit <input type = "text" name = {{ col }} /></p>
-    </ul>
-  {% endif %} 
-  
-  {% endfor %}
-  <input type="submit" class='submit'>
-</form>
-  Haha amk çocuğu
-
-
-<script>
-function myFunction() { 
-  var checkBox = document.getElementsByClassName("myCheck");
-  var text = document.getElementsByClassName("text");
-  var i;
-
-  for(i = 0; i < checkBox.length; i++)
-  {
-    if (checkBox[i].checked == true){    
-      text[i].style.display = "block";
-    } else {
-      text[i].style.display = "none";
+    for(i = 0; i < checkBox.length; i++)
+    {
+      if (checkBox[i].checked == true){    
+        text[i].style.display = "block";
+      } else {
+        text[i].style.display = "none";
+      }
     }
   }
+
+    function toggle(source) {
+          let checkboxes = document.getElementsByName('selected_parameters');
+          for(let i = 0; i < checkboxes.length; i++){
+            checkboxes[i].checked = !checkboxes[i].checked;
+          }
+        }
+    
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    {% if graphSelected %}
+        {{ js_resources|indent(4)|safe }}
+        {{ css_resources|indent(4)|safe }}
+        {{ plot_script|indent(4)|safe }}
+    {% endif %}
+
+<style>
+.checkboxes li {
+  display: block;
+  float: left;
+  width: 25%;
 }
-</script>
+.submit{
+	width: 90px;
+	height: 40px;
+}
+body {
+	background:   rgba(112, 203, 255, 0.3);
+}
+
+/* Navbar container */
+.navbar {
+  overflow: hidden;
+  background-color: #333;
+  font-family: Arial;
+  border-radius: 10px;
+}
+
+/* Links inside the navbar */
+.navbar a {
+  float: left;
+  font-size: 16px;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+/* The dropdown container */
+.dropdown {
+  float: left;
+  overflow: hidden;
+}
+
+/* Dropdown button */
+.dropdown .dropbtn {
+  font-size: 16px;
+  border: none;
+  outline: none;
+  color: white;
+  padding: 14px 16px;
+  background-color: inherit;
+  font-family: inherit; /* Important for vertical align on mobile phones */
+  margin: 0; /* Important for vertical align on mobile phones */
+}
+
+/* Add a red background color to navbar links on hover */
+.navbar a:hover, .dropdown:hover .dropbtn {
+  background-color: red;
+}
+
+/* Dropdown content (hidden by default) */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+  float: none;
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+}
+
+/* Add a grey background color to dropdown links on hover */
+.dropdown-content a:hover {
+  background-color: #ddd;
+}
+
+/* Show the dropdown menu on hover */
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+label {
+  border:0px solid #ccc;
+ padding:3px;
+ margin:0 0 3px;
+ display:block; 
+}
+
+label:hover {
+ background:#eee;
+ cursor:pointer;
+}
+.container { border:2px solid #ccc; width:500px; height: 500px; overflow-y: scroll;}
+</style>
+</head>
+
+<div class="navbar">
+  <a href="/">Load Dataset</a>
+  <div class="dropdown">
+    <button class="dropbtn">Visualize
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="{{ url_for('correlation_graph') }}">Correlation Matrix</a>
+      <a href="{{ url_for('scatter_graph') }} ">Scatter Matrix</a>
+      <a href="{{ url_for('pie_graph') }} ">Pie Graph</a>
+      <a href="{{ url_for('dist_graph') }} ">Histogram</a>
+      <a href="{{ url_for('bar_graph') }} ">Bar Graph</a>
+    </div>
+  </div>
+
+  <div class="dropdown">
+    <button class="dropbtn">Attributes
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="{{ url_for('select_variables') }}">Choose X</a>
+      <a href="{{ url_for('select_y') }} ">Choose Y</a>
+      <a href="{{ url_for('pca_transform') }} ">PCA</a>
+      <a href="{{ url_for('create_column') }}">Column Transform</a>
+      <a href="{{ url_for('filter_transform') }} ">Filter</a>
+    </div>
+  </div>
+    <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
+</div>
+
+
+
+<h2 style = "color : red"> Please choose features to filter your dataset.</h2>
+Features not selected has no effect in filtering.
+  <form action="" method="post" style="display:block">
+    <div class = "container">
+    <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
+    <ul id = "myUL">
+      {% for col in cols %}
+      <label for="myCheck">{{ col }}:</label> 
+      <input type="checkbox" class="myCheck" onclick="myFunction2()" value = 1>
+    
+      {% if col in objectCols %}
+      <ul class = "text" style = "display:none">
+        {% for r in df[col].unique() %}
+        <input type = "checkbox" name = {{ col }} value = "{{ r }}" checked> {{ r }}
+        {% endfor %}
+      </ul>
+      {% endif %} 
+      
+      {% if col not in objectCols %}
+      <ul class = "text" style = "display:none">
+          <p>Lower Limit <input type = "text" name = {{ col }} /></p>
+          <p>Upper Limit <input type = "text" name = {{ col }} /></p>
+        </ul>
+      {% endif %} 
+      
+      {% endfor %}
+    </ul>
+      </div>
+   
+      <input type="submit" class='submit'>
+    </form>
+
+
+    
+{% if error %}
+<p><h3 style = "color : gray;">{{ error }} </h3></p>
+{% endif %}
 
 </body>
 </html>
+
+

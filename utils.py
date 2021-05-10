@@ -5,12 +5,14 @@ from run import ALLOWED_EXTENSIONS
 from flask_wtf import FlaskForm
 from collections import OrderedDict
 from flask import Flask, request, redirect, url_for,render_template
-from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput
+from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, CustomJS
 from bokeh.io import curdoc
 from bokeh.resources import INLINE
 from bokeh.embed import components
 from bokeh.plotting import figure, output_file, show
 from bokeh.layouts import gridplot
+from bokeh.models.widgets import Button
+
 import bisect
 from math import pi
 from numpy import arange
@@ -379,6 +381,7 @@ def nan_plot(df):
 
 
 def bar_plot(data,selected_parameter, option = 'Vertical'):
+
     # Draw a chart
     TOOLS = "box_select,lasso_select,pan,wheel_zoom,box_zoom,reset,help,save"
     result = create_feature_matrix(data,selected_parameter)
@@ -415,6 +418,7 @@ def bar_plot(data,selected_parameter, option = 'Vertical'):
     columns = data.columns,
     selected = selected_parameter
     ).encode(encoding='UTF-8')
+    
 
 
 def return_result_graph(model,selectedModel):
@@ -543,7 +547,6 @@ def combine_columns(data, selected_columns, new_column_name, mode, delete_column
     selected_df = data[selected_columns]
 
     if mode == "mean":
-
         data[new_column_name] = selected_df.sum(axis = 1)/len(selected_columns)
         
     elif mode == "sum":
@@ -556,7 +559,13 @@ def combine_columns(data, selected_columns, new_column_name, mode, delete_column
         concated_columns = concat_columns(data,selected_columns)
         data[new_column_name] = concated_columns 
 
-    if delete_column:
+    elif mode == "drop-nan-rows":
+        data = selected_df.dropna()
+
+    elif mode == "drop-nan-columns":
+        data = selected_df.dropna(axis=1)
+
+    if delete_column and mode != "drop-nan-rows" and mode != "drop-nan-columns":
         return data.drop(selected_columns,axis = 1)
     
     return data
@@ -618,11 +627,14 @@ def filter_data(data, actions):
     """
     copy_data = data.copy()
     handled_actions = handle_actions(data,actions)
+
     for column, action in handled_actions.items():
+        #print(column,action)
         if data.dtypes[column] == object: #Datatype is object/discreate
             condition = data[column].isin(action)
             
         else:
             condition = (data[column] >= action[0]) & (data[column] < action[1])
         data = data[condition]
-    return copy_data.iloc[data.index]
+        print(data.shape)
+    return copy_data.loc[data.index]

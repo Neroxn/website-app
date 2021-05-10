@@ -137,35 +137,35 @@ label:hover {
 </style>
 </head>
 <body>
-    <div class="navbar">
-        <a href="/">Load Dataset</a>
-        <div class="dropdown">
-          <button class="dropbtn">Visualize
-            <i class="fa fa-caret-down"></i>
-          </button>
-          <div class="dropdown-content">
-            <a href="{{ url_for('correlation_graph') }}">Correlation Matrix</a>
-            <a href="{{ url_for('scatter_graph') }} ">Scatter Matrix</a>
-            <a href="{{ url_for('pie_graph') }} ">Pie Graph</a>
-            <a href="{{ url_for('dist_graph') }} ">Histogram</a>
-            <a href="{{ url_for('bar_graph') }} ">Bar Graph</a>
-          </div>
-        </div>
-      
-        <div class="dropdown">
-          <button class="dropbtn">Attributes
-            <i class="fa fa-caret-down"></i>
-          </button>
-          <div class="dropdown-content">
-            <a href="{{ url_for('select_variables') }}">Choose X</a>
-            <a href="{{ url_for('select_y') }} ">Choose Y</a>
-            <a href="{{ url_for('pca_transform') }} ">PCA</a>
-            <a href="{{ url_for('create_column') }}">Combine Columns</a>
-            <a href="{{ url_for('filter_transform') }} ">Filter</a>
-          </div>
-        </div>
-          <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
+  <div class="navbar">
+    <a href="/">Load Dataset</a>
+    <div class="dropdown">
+      <button class="dropbtn">Visualize
+        <i class="fa fa-caret-down"></i>
+      </button>
+      <div class="dropdown-content">
+        <a href="{{ url_for('correlation_graph') }}">Correlation Matrix</a>
+        <a href="{{ url_for('scatter_graph') }} ">Scatter Matrix</a>
+        <a href="{{ url_for('pie_graph') }} ">Pie Graph</a>
+        <a href="{{ url_for('dist_graph') }} ">Histogram</a>
+        <a href="{{ url_for('bar_graph') }} ">Bar Graph</a>
       </div>
+    </div>
+  
+    <div class="dropdown">
+      <button class="dropbtn">Attributes
+        <i class="fa fa-caret-down"></i>
+      </button>
+      <div class="dropdown-content">
+        <a href="{{ url_for('select_variables') }}">Choose X</a>
+        <a href="{{ url_for('select_y') }} ">Choose Y</a>
+        <a href="{{ url_for('pca_transform') }} ">PCA</a>
+        <a href="{{ url_for('create_column') }}">Column Transform</a>
+        <a href="{{ url_for('filter_transform') }} ">Filter</a>
+      </div>
+    </div>
+      <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
+  </div>
       
 
 <form action="" method = "post" enctype="multipart/form-data">
@@ -184,6 +184,8 @@ label:hover {
     <input type="radio" name="selected_mode" value="mean"> Mean 
     <input type="radio" name="selected_mode" value="difference"> Difference 
     <input type="radio" name="selected_mode" value="concat"> Concat Objects
+    <input type="radio" name="selected_mode" value="drop-nan-rows"> Drop NaN Rows
+    <input type="radio" name="selected_mode" value="drop-nan-columns"> Drop NaN Columns
     <p><input type="checkbox" name = "delete_columns" value ="1" checked> Delete used columns </p>
     <p><input type="text" name = "new_column_name" required> New column name</p>
     <input type="submit" value="submit">
