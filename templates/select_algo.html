@@ -1,13 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script language="JavaScript">
-function toggle(source) {
-  let checkboxes = document.getElementsByName('hello');
-  for(let i = 0; i < checkboxes.length; i++){
-    checkboxes[i].checked = !checkboxes[i].checked;
-  }
-}
+<script src="https://code.jquery.com/jquery-latest.min.js"></script>
+<script>
+$(document).ready(function(){
+$('#selector').change(function(){
+   if($(this).val() == "Adaboost"){
+       $('#parameters').remove();
+        $('#deneme').append("<label id = \'parameters\'><h1>Please enter parameters of Adaboost algorithm</h1><form action=\"\" method=post enctype=multipart/form-data><p>Number of estimator<input type = \"text\" name = \"numberEstimator\" /></p><p>Learning rate<input type = \"text\" name = \"learningRate\" /></p><p>Loss<input type = \"text\" name = \"loss\" /></p><input type=submit value=Sumbit></form></label>");
+   }
+   else if($(this).val() == "SVM"){
+       $('#parameters').remove();
+              $('#deneme').append("<label id = \'parameters\'><h1>Please enter parameters of SVM algorithm</h1><form action=\"\" method=post enctype=multipart/form-data><p>Kernel<input type = \"text\" name = \"kernel\" /></p><p>C<input type = \"text\" name = \"C\" /></p><p>(if kernel is NOT linear)Gamma <input type = \"text\" name = \"gamma\" /></p><p>(if kernel is poly)Degree<input type = \"text\" name = \"degree\" /></p><input type=submit value=Sumbit></form></label>");
+   }
+    else if($(this).val() == "RandomForest"){
+        $('#parameters').remove();
+        $('#deneme').append("<label id = \'parameters\'><h1>Please enter parameters of RandomForest algorithm</h1><form action=\"\" method=post enctype=multipart/form-data><p>Number of estimator<input type = \"text\" name = \"numberEstimator\" /></p><p>maxDepth(int) <input type = \"text\" name = \"maxDepth\" /></p><p>Minimum Samples Leaf<input type = \"text\" name = \"minSamplesLeaf\" /></p><input type=submit value=Sumbit></form></label>");
+   }
+});
+});
 </script>
 <style>
 .checkboxes li {
@@ -99,7 +110,19 @@ body {
 
 <div class="navbar">
   <a href="/">Load Dataset</a>
-  <a href="{{ url_for('visualize') }}">Visualize</a>
+  <div class="dropdown">
+    <button class="dropbtn">Visualize
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="{{ url_for('correlation_graph') }}">Correlation Matrix</a>
+      <a href="{{ url_for('scatter_graph') }} ">Scatter Matrix</a>
+      <a href="{{ url_for('pie_graph') }} ">Pie Graph</a>
+      <a href="{{ url_for('dist_graph') }} ">Histogram</a>
+      <a href="{{ url_for('bar_graph') }} ">Bar Graph</a>
+    </div>
+  </div>
+
   <div class="dropdown">
     <button class="dropbtn">Attributes
       <i class="fa fa-caret-down"></i>
@@ -107,21 +130,23 @@ body {
     <div class="dropdown-content">
       <a href="{{ url_for('select_variables') }}">Choose X</a>
       <a href="{{ url_for('select_y') }} ">Choose Y</a>
+      <a href="{{ url_for('pca_transform') }} ">PCA</a>
+      <a href="{{ url_for('create_column') }}">Column Transform</a>
+      <a href="{{ url_for('filter_transform') }} ">Filter</a>
     </div>
   </div>
-  <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
+    <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
 </div>
 
 
     <h1>Select training algorithm </h1>
-<form method="post">
 <div class="custom-select" style="width:200px;">
-  <select class= "selector" name= 'selector'>
+  <select class= "selector" name= 'selector' id= 'selector'>
     <option value="0" disabled="disabled">Select algorithm:</option>
     <option value="SVM">SVM</option>
     <option value="RandomForest">RandomForest</option>
     <option value="Adaboost">Adaboost</option>
   </select>
 </div>
-<input type="submit" class='sumbit'>
-</form>
+<div id = 'deneme'></div>
+</html>

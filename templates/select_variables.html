@@ -99,7 +99,19 @@ body {
 
 <div class="navbar">
   <a href="/">Load Dataset</a>
-  <a href="{{ url_for('visualize') }}">Visualize</a>
+  <div class="dropdown">
+    <button class="dropbtn">Visualize
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="{{ url_for('correlation_graph') }}">Correlation Matrix</a>
+      <a href="{{ url_for('scatter_graph') }} ">Scatter Matrix</a>
+      <a href="{{ url_for('pie_graph') }} ">Pie Graph</a>
+      <a href="{{ url_for('dist_graph') }} ">Histogram</a>
+      <a href="{{ url_for('bar_graph') }} ">Bar Graph</a>
+    </div>
+  </div>
+
   <div class="dropdown">
     <button class="dropbtn">Attributes
       <i class="fa fa-caret-down"></i>
@@ -107,12 +119,13 @@ body {
     <div class="dropdown-content">
       <a href="{{ url_for('select_variables') }}">Choose X</a>
       <a href="{{ url_for('select_y') }} ">Choose Y</a>
+      <a href="{{ url_for('pca_transform') }} ">PCA</a>
+      <a href="{{ url_for('create_column') }}">Column Transform</a>
+      <a href="{{ url_for('filter_transform') }} ">Filter</a>
     </div>
   </div>
     <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
 </div>
-
-
     <h1>Select variables that will be used in training </h1>
 <form method="post">
 <!--> <button type='button' onClick='toggle(this)'>Toggle All</button><!-->

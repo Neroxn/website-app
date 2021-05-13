@@ -1,7 +1,8 @@
 import numpy as np
+import pandas as pd
 from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor
-
+from preprocess import *
 def applySVM(xTrain, yTrain, kernel= 'linear', c= 1, gamma= 'auto', degree= 4):
     """
     Applies SVM on training set and return model.
@@ -49,3 +50,45 @@ def applyAdaBoost(xTrain, yTrain, numberEstimator= 50, learningRate= 1, loss= 'l
     
     model.fit(xTrain, yTrain)
     return model
+
+"""
+def applyLSTM(df, selectedX, selectedY):
+    
+    #Convert DateTime
+    df['DateTime'] = pd.to_datetime(df['Date.Time'])
+    
+    #Drop NaN and duplicate values
+    df = dropNanAndDuplicates(df, 0.75)
+    
+    #Save orginal df
+    df2 = df.drop(['ID', 'Date.Time', 'Eye', 'idEye'], axis = 1)
+    
+    #Scale
+    df2, scaler, scalerY = scale(df2, selectedY)
+    
+    #Backup ID columns from orginal df
+    df2['ID'] = df['ID']
+    df2['Date.Time'] = df['Date.Time']
+    df2['Eye'] = df['Eye']
+    df2['idEye'] = df['idEye']
+    
+    #Generators
+    def train_generator():
+        while True:
+            x_train, y_train = shuffle_list(x_tt, y_tt)
+            for i in range(x_train.shape[0]):
+                train_x = x_train[i].reshape((1, -1, len(selectedX)))
+                train_y = y_train[i].reshape((1, -1, len(selectedY)))
+                yield train_x, train_y
+                
+    def valid_generator():
+        while True:
+            x_train, y_train = shuffle_list(x_valid, y_valid)
+            for i in range(x_train.shape[0]):
+                train_x = x_train[i].reshape((1, -1, len(selectedX)))
+                train_y = y_train[i].reshape((1, -1, len(selectedY)))
+                yield train_x, train_y
+    
+    #fetch dataFrame
+    (x_org, y_org), (x_left, y_left), (x_right, y_right) = fetch_ID_dataframe_last(df2, min_observation=1, seperate=True)
+"""
