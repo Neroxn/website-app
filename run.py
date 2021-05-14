@@ -142,7 +142,7 @@ def create_app(test_config = None):
                 #Check whether kernel is valid
                 if not request.form['kernel'] in ['linear', 'rbf', 'poly','sigmoid']:
                     flash('Invalid kernel, kernel must be one of them: linear, rbf, poly, sigmoid')
-                    return render_template("select_algo.html")
+                    return redirect(url_for('selectAlgo'))
                 else:
                     kernel = request.form['kernel']
                 
@@ -150,12 +150,12 @@ def create_app(test_config = None):
                 try:
                     if float(request.form['C']) <= 0 :
                         flash('C must be positive real number')
-                        return render_template("select_algo.html")
+                        return redirect(url_for('selectAlgo'))
                     else:
                         C = request.form['C']
                 except:
                     flash('C must be a float number')
-                    return render_template("select_algo.html")
+                    return redirect(url_for('selectAlgo'))
                 
                 #Check whether gamma is valid
                 if(kernel == 'linear'):
@@ -168,12 +168,12 @@ def create_app(test_config = None):
                             gamma = 'auto'
                         elif float(request.form['gamma']) == 0:
                             flash('Gamma must be different from 0')
-                            return render_template("select_algo.html")
+                            return redirect(url_for('selectAlgo'))
                         else:
                             gamma = float(request.form['gamma'])
                     except:
                         flash('Gamma must be auto, scale, or a float number')
-                        return render_template("select_algo.html")
+                        return redirect(url_for('selectAlgo'))
             
                 #Check whether degree is valid
                 if(kernel != 'poly' and request.form['degree'] != ''):
@@ -183,13 +183,13 @@ def create_app(test_config = None):
                     try:
                         if int(request.form['degree']) <= 0:
                             flash('Degree must be positive integer')
-                            return render_template("select_algo.html")
+                            return redirect(url_for('selectAlgo'))
                         else:
                             degree = int(request.form['degree'])
                     
                     except:
                         flash('Degree must be a positive integer')
-                        return render_template("select_algo.html")
+                        return redirect(url_for('selectAlgo'))
                 else:
                     degree = 3
                 
@@ -216,12 +216,12 @@ def create_app(test_config = None):
                 try:
                     if int(request.form['numberEstimator']) <= 0 :
                         flash('Number of estimator must be a positive integer')
-                        return render_template("select_algo.html")
+                        return redirect(url_for('selectAlgo'))
                     else:
                         numberEstimator = int(request.form['numberEstimator'])
                 except:
                     flash('Number of estimator must be an integer')
-                    return render_template("select_algo.html")
+                    return redirect(url_for('selectAlgo'))
                     
                 #Check whether maxDepth is valid
                 try:
@@ -229,30 +229,30 @@ def create_app(test_config = None):
                         maxDepth = 'None'
                     elif int(request.form['maxDepth']) <= 0 :
                         flash('Max depth must be a positive integer')
-                        return render_template("select_algo.html")
+                        return redirect(url_for('selectAlgo'))
                     else:
                         maxDepth = int(request.form['maxDepth'])
                 except:
                     flash('Max depth must be an integer or None')
-                    return render_template("select_algo.html")
+                    return redirect(url_for('selectAlgo'))
                 
                 #Check whether minimum samples leaf is valid
                 try:
                     if int(request.form['minSamplesLeaf']) <= 0 :
                         flash('Minimum samples leaf must be a positive integer or float')
-                        return render_template("select_algo.html")
+                        return redirect(url_for('selectAlgo'))
                     else:
                         minSamplesLeaf = int(request.form['minSamplesLeaf'])
                 except:
                     try:
                         if float(request.form['minSamplesLeaf']) <= 0 :
                             flash('Minimum samples leaf must be a positive integer or float')
-                            return render_template("select_algo.html")
+                            return redirect(url_for('selectAlgo'))
                         else:
                             minSamplesLeaf = float(request.form['minSamplesLeaf'])
                     except:
                         flash('Minimum samples leaf must be an integer or float')
-                        return render_template("select_algo.html")
+                        return redirect(url_for('selectAlgo'))
                             
                 #Parameters are valid, train time
                 df2 = df[selectedX+selectedY]
@@ -274,28 +274,28 @@ def create_app(test_config = None):
                 try:
                     if int(request.form['numberEstimator']) <= 0 :
                         flash('Number of estimator must be a positive integer')
-                        return render_template("select_algo.html")
+                        return redirect(url_for('selectAlgo'))
                     else:
                         numberEstimator = int(request.form['numberEstimator'])
                 except:
                     flash('Number of estimator must be an integer')
-                    return render_template("select_algo.html")
+                    return redirect(url_for('selectAlgo'))
                 
                 #Check whether learning rate is valid
                 try:
                     if float(request.form['learningRate']) <= 0 :
                         flash('Learning rate must be a positive float')
-                        return render_template("select_algo.html")
+                        return redirect(url_for('selectAlgo'))
                     else:
                         learningRate = float(request.form['learningRate'])
                 except:
                     flash('Number of estimator must be an float')
-                    return render_template("select_algo.html")
+                    return redirect(url_for('selectAlgo'))
                 
                 #Check whether loss is valid
                 if not request.form['loss'] in ['linear', 'square', 'exponential']:
                     flash('Invalid loss, loss must be one of them: linear, square, exponential')
-                    return render_template("select_algo.html")
+                    return redirect(url_for('selectAlgo'))
                 else:
                     loss = request.form['loss']
                 
@@ -316,201 +316,6 @@ def create_app(test_config = None):
             
         return render_template("select_algo.html")
 
-    @app.route("/SVM", methods = ["GET","POST"])
-    def SVM():
-        global model,selectedModel
-        selectedModel = "SVM"
-        if request.method == 'POST':
-            #Check whether kernel is valid
-            if not request.form['kernel'] in ['linear', 'rbf', 'poly','sigmoid']:
-                flash('Invalid kernel, kernel must be one of them: linear, rbf, poly, sigmoid')
-                return render_template("algorithms/SVM.html")
-            else:
-                kernel = request.form['kernel']
-                
-            #Check whether C is valid
-            try:
-                if float(request.form['C']) <= 0 :
-                    flash('C must be positive real number')
-                    return render_template("algorithms/SVM.html")
-                else:
-                    C = request.form['C']
-            except:
-                flash('C must be a float number')
-                return render_template("algorithms/SVM.html")
-                
-            #Check whether gamma is valid
-            if(kernel == 'linear'):
-                gamma = 'scale'
-            try:
-                if request.form['gamma'] == 'scale':
-                    gamma = 'scale'
-                elif request.form['gamma'] == 'auto':
-                    gamma = 'auto'
-                elif float(request.form['gamma']) == 0:
-                    flash('Gamma must be different from 0')
-                    return render_template("algorithms/SVM.html")
-                else:
-                    gamma = float(request.form['gamma'])
-            except:
-                flash('Gamma must be auto, scale, or a float number')
-                return render_template("algorithms/VM.html")
-            
-            #Check whether degree is valid
-            if(kernel != 'poly' and request.form['degree'] != ''):
-                flash('Poly must be defined if kernel is polynomial')
-                return render_template("algorithms/SVM.html")
-            if(kernel == 'poly'):
-                try:
-                    if int(request.form['degree']) <= 0:
-                        flash('Degree must be positive integer')
-                        return render_template("algorithms/SVM.html")
-                    else:
-                        degree = int(request.form['degree'])
-                    
-                except:
-                    flash('Degree must be a positive integer')
-                    return render_template("algorithms/SVM.html")
-            else:
-                degree = 3
-                
-            #Parameters are valid, train time
-            df2 = df[selectedX+selectedY]
-            df2 = dropNanAndDuplicates(df2, 0.75)
-            df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
-            df2, scaler, scalerY = scale(df2, selectedY)
-            trainX, testX, trainY, testY = train_test_split(df2[selectedX], df2[selectedY], 
-                                                            test_size= 0.15, shuffle= True)
-            
-            model = applySVM(trainX, trainY, kernel= kernel, c= float(C), gamma= gamma, degree= float(degree))
-            
-            #Train is done, predict time
-            result = model.predict(testX).reshape((len(testX),-1))
-            print(result.shape)
-            result = scalerY.inverse_transform(result)
-            if encoderArr:
-                result = stringDecoder(result, encoderArr, selectedY)
-            
-            return redirect(url_for('results', actual= testY, prediction= result))
-            
-        return render_template("algorithms/SVM.html")
-
-    @app.route("/RandomForest", methods = ["GET","POST"])
-    def RandomForest():
-        global model,selectedModel
-        selectedModel = "RandomForest"
-        if request.method == 'POST':
-        
-            #Check whether number of estimator is valid
-            try:
-                if int(request.form['numberEstimator']) <= 0 :
-                    flash('Number of estimator must be a positive integer')
-                    return render_template("algorithms/RandomForest.html")
-                else:
-                    numberEstimator = int(request.form['numberEstimator'])
-            except:
-                flash('Number of estimator must be an integer')
-                return render_template("algorithms/RandomForest.html")
-                
-            #Check whether maxDepth is valid
-            try:
-                if request.form['maxDepth'] == 'None':
-                    maxDepth = 'None'
-                elif int(request.form['maxDepth']) <= 0 :
-                    flash('Max depth must be a positive integer')
-                    return render_template("algorithms/RandomForest.html")
-                else:
-                    maxDepth = int(request.form['maxDepth'])
-            except:
-                flash('Max depth must be an integer or None')
-                return render_template("algorithms/RandomForest.html")
-                
-            #Check whether minimum samples leaf is valid
-            try:
-                if int(request.form['minSamplesLeaf']) <= 0 :
-                    flash('Minimum samples leaf must be a positive integer or float')
-                    return render_template("algorithms/RandomForest.html")
-                else:
-                    minSamplesLeaf = int(request.form['minSamplesLeaf'])
-            except:
-                try:
-                    if float(request.form['minSamplesLeaf']) <= 0 :
-                        flash('Minimum samples leaf must be a positive integer or float')
-                        return render_template("algorithms/RandomForest.html")
-                    else:
-                        minSamplesLeaf = float(request.form['minSamplesLeaf'])
-                except:
-                    flash('Minimum samples leaf must be an integer or float')
-                    return render_template("algorithms/RandomForest.html")
-                    
-            #Parameters are valid, train time
-            df2 = df[selectedX+selectedY]
-            df2 = dropNanAndDuplicates(df2, 0.75)
-            df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
-            trainX, testX, trainY, testY = train_test_split(df2[selectedX], df2[selectedY], 
-                                                            test_size= 0.15, shuffle= True)
-            model = applyRandomForest(trainX, trainY, numberEstimator= numberEstimator, maxDepth = maxDepth, minSamplesLeaf=minSamplesLeaf)
-            
-            #Train is done, predict time
-            result = model.predict(testX).reshape((len(testX),-1))
-            if encoderArr:
-                result = stringDecoder(result, encoderArr, selectedY)
-            
-            return redirect(url_for('results', actual= testY, prediction= result))
-        return render_template("algorithms/RandomForest.html")
-
-    @app.route("/Adaboost", methods = ["GET","POST"])
-    def Adaboost():
-        global model,selectedModel
-        selectedModel = "Adaboost"
-        if request.method == 'POST':
-        
-            #Check whether number of estimator is valid
-            try:
-                if int(request.form['numberEstimator']) <= 0 :
-                    flash('Number of estimator must be a positive integer')
-                    return render_template("algorithms/Adaboost.html")
-                else:
-                    numberEstimator = int(request.form['numberEstimator'])
-            except:
-                flash('Number of estimator must be an integer')
-                return render_template("algorithms/Adaboost.html")
-                
-            #Check whether learning rate is valid
-            try:
-                if float(request.form['learningRate']) <= 0 :
-                    flash('Learning rate must be a positive float')
-                    return render_template("algorithms/RandomForest.html")
-                else:
-                    learningRate = float(request.form['learningRate'])
-            except:
-                flash('Number of estimator must be an float')
-                return render_template("algorithms/RandomForest.html")
-                
-            #Check whether loss is valid
-            if not request.form['loss'] in ['linear', 'square', 'exponential']:
-                flash('Invalid loss, loss must be one of them: linear, square, exponential')
-                return render_template("algorithms/RandomForest.html")
-            else:
-                loss = request.form['loss']
-                
-            #Parameters are valid, train time
-            df2 = df[selectedX+selectedY]
-            df2 = dropNanAndDuplicates(df2, 0.75)
-            df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
-            trainX, testX, trainY, testY = train_test_split(df2[selectedX], df2[selectedY], 
-                                                            test_size= 0.15, shuffle= True)
-            model = applyAdaBoost(trainX, trainY, numberEstimator= numberEstimator, learningRate= learningRate, loss=loss)
-            
-            #Train is done, predict time
-            result = model.predict(testX).reshape((len(testX),-1))
-            if encoderArr:
-                result = stringDecoder(result, encoderArr, selectedY)
-            
-            return redirect(url_for('results', actual= testY, prediction= result))
-                
-        return render_template("algorithms/Adaboost.html")
-        
     @app.route('/visualize',methods = ["GET","POST"])
     def visualize():
         print(request.method)

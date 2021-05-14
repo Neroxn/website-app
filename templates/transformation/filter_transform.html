@@ -1,48 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script language="JavaScript">
-    function myFunction() {
-      var input, filter, ul, li, la, i, txtValue;
-      input = document.getElementById("myInput");
-      filter = input.value.toUpperCase();
-      ul = document.getElementById("myUL");
-      li = ul.getElementsByTagName("li");
-    
-      for (i = 0; i < li.length; i++) { 
-        la = li[i].getElementsByTagName("label")[0];
-        txtValue = la.textContent || la.innerText; 
-        if (txtValue.toUpperCase().indexOf(filter) > -1) {  
-          li[i].style.display = "";
-        } else {
-          li[i].style.display = "none";
-        }
-      }
-    }
-    function myFunction2() { 
-    var checkBox = document.getElementsByClassName("myCheck");
-    var text = document.getElementsByClassName("text");
-    var i;
-
-    for(i = 0; i < checkBox.length; i++)
-    {
-      if (checkBox[i].checked == true){    
-        text[i].style.display = "block";
-      } else {
-        text[i].style.display = "none";
-      }
-    }
-  }
-
-    function toggle(source) {
-          let checkboxes = document.getElementsByName('selected_parameters');
-          for(let i = 0; i < checkboxes.length; i++){
-            checkboxes[i].checked = !checkboxes[i].checked;
-          }
-        }
-    
-    </script>
-
+<script src="{{ url_for('static',filename='js/filter_transform.js') }}"></script>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/filter_transform.css') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
@@ -51,106 +12,10 @@
         {{ css_resources|indent(4)|safe }}
         {{ plot_script|indent(4)|safe }}
     {% endif %}
-
-<style>
-.checkboxes li {
-  display: block;
-  float: left;
-  width: 25%;
-}
-.submit{
-	width: 90px;
-	height: 40px;
-}
-body {
-	background:   rgba(112, 203, 255, 0.3);
-}
-
-/* Navbar container */
-.navbar {
-  overflow: hidden;
-  background-color: #333;
-  font-family: Arial;
-  border-radius: 10px;
-}
-
-/* Links inside the navbar */
-.navbar a {
-  float: left;
-  font-size: 16px;
-  color: white;
-  text-align: center;
-  padding: 14px 16px;
-  text-decoration: none;
-}
-
-/* The dropdown container */
-.dropdown {
-  float: left;
-  overflow: hidden;
-}
-
-/* Dropdown button */
-.dropdown .dropbtn {
-  font-size: 16px;
-  border: none;
-  outline: none;
-  color: white;
-  padding: 14px 16px;
-  background-color: inherit;
-  font-family: inherit; /* Important for vertical align on mobile phones */
-  margin: 0; /* Important for vertical align on mobile phones */
-}
-
-/* Add a red background color to navbar links on hover */
-.navbar a:hover, .dropdown:hover .dropbtn {
-  background-color: red;
-}
-
-/* Dropdown content (hidden by default) */
-.dropdown-content {
-  display: none;
-  position: absolute;
-  background-color: #f9f9f9;
-  min-width: 160px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
-}
-
-/* Links inside the dropdown */
-.dropdown-content a {
-  float: none;
-  color: black;
-  padding: 12px 16px;
-  text-decoration: none;
-  display: block;
-  text-align: left;
-}
-
-/* Add a grey background color to dropdown links on hover */
-.dropdown-content a:hover {
-  background-color: #ddd;
-}
-
-/* Show the dropdown menu on hover */
-.dropdown:hover .dropdown-content {
-  display: block;
-}
-label {
-  border:0px solid #ccc;
- padding:3px;
- margin:0 0 3px;
- display:block; 
-}
-
-label:hover {
- background:#eee;
- cursor:pointer;
-}
-.container { border:2px solid #ccc; width:500px; height: 500px; overflow-y: scroll;}
-</style>
 </head>
 
+<body>
+  
 <div class="navbar">
   <a href="/">Load Dataset</a>
   <div class="dropdown">
