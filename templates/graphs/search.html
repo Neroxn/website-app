@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script language="JavaScript">
+function myFunction() {
+  var input, filter, ul, li, la, i, txtValue;
+  input = document.getElementById("myInput");
+  filter = input.value.toUpperCase();
+  ul = document.getElementById("myUL");
+  li = ul.getElementsByTagName("li");
+
+  for (i = 0; i < li.length; i++) { 
+    la = li[i].getElementsByTagName("label")[0];
+    txtValue = la.textContent || la.innerText; 
+    if (txtValue.toUpperCase().indexOf(filter) > -1) {  
+      li[i].style.display = "";
+    } else {
+      li[i].style.display = "none";
+    }
+  }
+}
+
+</script>
+<style>
+.checkboxes li {
+  display: block;
+  float: left;
+  width: 25%;
+}
+.submit{
+	width: 90px;
+	height: 40px;
+}
+body {
+	background:   rgba(112, 203, 255, 0.3);
+}
+
+/* Navbar container */
+.navbar {
+  overflow: hidden;
+  background-color: #333;
+  font-family: Arial;
+  border-radius: 10px;
+}
+
+/* Links inside the navbar */
+.navbar a {
+  float: left;
+  font-size: 16px;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+/* The dropdown container */
+.dropdown {
+  float: left;
+  overflow: hidden;
+}
+
+/* Dropdown button */
+.dropdown .dropbtn {
+  font-size: 16px;
+  border: none;
+  outline: none;
+  color: white;
+  padding: 14px 16px;
+  background-color: inherit;
+  font-family: inherit; /* Important for vertical align on mobile phones */
+  margin: 0; /* Important for vertical align on mobile phones */
+}
+
+/* Add a red background color to navbar links on hover */
+.navbar a:hover, .dropdown:hover .dropbtn {
+  background-color: red;
+}
+
+/* Dropdown content (hidden by default) */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+  float: none;
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+}
+
+/* Add a grey background color to dropdown links on hover */
+.dropdown-content a:hover {
+  background-color: #ddd;
+}
+
+/* Show the dropdown menu on hover */
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+ul {
+  list-style-type:none;
+}
+
+label {
+  border:0px solid #ccc;
+ padding:3px;
+ margin:0 0 3px;
+ display:block; 
+}
+
+label:hover {
+ background:#eee;
+ cursor:pointer;
+}
+
+.container { border:2px solid #ccc; width:300px; height: 300px; overflow-y: scroll;}
+
+</style>
+</head>
+
+<body>
+    <div class="navbar">
+      <a href="/">Load Dataset</a>
+      <a href="{{ url_for('visualize') }}">Visualize</a>
+      <div class="dropdown">
+        <button class="dropbtn">Attributes
+          <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+          <a href="{{ url_for('select_variables') }}">Choose X</a>
+          <a href="{{ url_for('select_y') }} ">Choose Y</a>
+        </div>
+      </div>
+        <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
+    </div>
+
+
+
+<h2> Select up to 10 features for scatter matrix : </h2>
+<form method="post">
+<div class = "container">
+<input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
+<ul id="myUL">
+    {% for col in columns %}
+  <li><label for="01"><input type="checkbox" name="parameters" value={{ col }}> {{ col }}</label></li>
+    {% endfor %}  
+</div>  
+    <input type="submit" class='sumbit'>
+</ul>
+</form>
+</div>
+</body>

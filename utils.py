@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import time
-from run import ALLOWED_EXTENSIONS
 from flask_wtf import FlaskForm
 from collections import OrderedDict
 from flask import Flask, request, redirect, url_for,render_template
@@ -20,6 +19,8 @@ from itertools import chain
 from collections import OrderedDict
 from bokeh.palettes import RdBu as colors
 from bokeh.models import ColorBar, LinearColorMapper
+
+ALLOWED_EXTENSIONS = set(['txt', 'csv'])
 
 def load_dataset(path,delimitter,qualifier,assumption = False):
     """
