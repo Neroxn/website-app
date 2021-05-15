@@ -86,7 +86,19 @@ Features not selected has no effect in filtering.
 <p><h3 style = "color : gray;">{{ error }} </h3></p>
 {% endif %}
 
+<div class = "container">
+  {% for message in get_flashed_messages() %}
+  <div class = "alert alert-warning">
+      <button type = "button" class = "close" data-dismiss = "alert">&times;</button>
+      {{ message }}
+  </div>
+  {% endfor %}
+</div>
+
 </body>
+
+
+
 </html>
 
 

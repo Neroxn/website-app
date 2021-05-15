@@ -1,0 +1,40 @@
+.workspaces{
+	font-size: 20px;
+}
+
+.workspaces a:hover{
+    font-size: 28px;
+    color: red;
+}
+
+.choose-file {
+	width: 180px;
+	height: 50px;
+}
+
+.upload{
+	width: 90px;
+	height: 40px;
+}
+
+body {
+	background:   rgba(112, 203, 255, 0.3);
+}
+
+div.scrollmenu {
+  background-color: rgb(112, 203, 255, 0.4);
+  overflow: auto;
+  white-space: nowrap;
+}
+
+div.scrollmenu a {
+  display: inline-block;
+  color: white;
+  text-align: center;
+  padding: 14px;
+  text-decoration: none;
+}
+
+div.scrollmenu a:hover {
+  background-color: rgb(238, 4, 4);
+}

@@ -593,6 +593,11 @@ def handle_actions(data,actions):
     for col in data.columns:
         action_list = actions[col]
         if data.dtypes[col] == object:
+            for i in range(len(action_list)):
+                if action_list[i] != "nan":
+                    continue
+                else:
+                    action_list[i] = np.nan
             handled_actions[col] = action_list
             continue
         
