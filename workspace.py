@@ -1,5 +1,7 @@
 from db import *
+from flask import flash
 import pandas as pd
+import numpy as np
 import os
 import glob
 
@@ -7,11 +9,14 @@ def get_workspaces(user_id):
     """
     Get workspaces of the user
     """
+    db = get_db()
+    
     #Check user exists
-    if db.execute('SELECT username FROM user WHERE user_id = ?', (user_id,)).fetchone() is None:
+    """
+    if db.execute('SELECT username FROM user WHERE id = ?', (user_id,)).fetchone() is None:
         flash('No user with given id, cannot get workspaces')
         return
-
+    """
     #Get workspace_id from db
     query = db.execute('SELECT workspace_id FROM transactions WHERE user_id = ? ORDER BY workspace_id ASC', (user_id,)).fetchall()
     
@@ -19,18 +24,21 @@ def get_workspaces(user_id):
     if query is None:
         return []
     else:
-        return [item for tup in query for item in tup]
+        return np.unique([item for tup in query for item in tup])
 
 def get_workspace(user_id, workspace_id):
     """
     Get the workspace checkpoints list
     """
+    db = get_db()
     #Check user exists
-    if db.execute('SELECT username FROM user WHERE user_id = ? AND workspace_id = ?', (user_id, workspace_id)).fetchone() is None:
+    """
+    if db.execute("SELECT username FROM user WHERE id = ? AND workspace_id = ?", (user_id, workspace_id)).fetchone() is None:
         flash('No user with given id, cannot get the workspace')
         return
+    """
     #Get checkpoint list from db
-    query = db.execute('SELECT target_filename FROM transactions WHERE user_id = ?  AND workspace_id = ? ORDER BY target_filename ASC', (user_id,)).fetchall()
+    query = db.execute('SELECT target_filename FROM transactions WHERE user_id = ?  AND workspace_id = ? ORDER BY target_filename ASC', (user_id,workspace_id)).fetchall()
     
     if query is None:
         return []
@@ -80,10 +88,13 @@ def delete_workspace(user_id, workspace_id):
     db = get_db()
     
     #Check user exists
-    if db.execute('SELECT username FROM user WHERE user_id = ?', (user_id,)).fetchone() is None:
+
+    """
+    if db.execute('SELECT username FROM user WHERE id = ?', (user_id,)).fetchone() is None:
         flash('No user with given id, cannot create workspace')
         return
-        
+        """
+
     #Check workspace exists
     query = db.execute('SELECT target_filename FROM transactions WHERE user_id = ? AND workspace_id = ?', (user_id, workspace_id)).fetchall()
     if  query is None:
@@ -93,6 +104,7 @@ def delete_workspace(user_id, workspace_id):
     #removes csv files
     files = glob.glob('./csv/'+ str(user_id) + '_' + str(workspace_id) + '_*.csv')
     for f in files:
+        print(f)
         os.remove(f)
     
     #remove transactions
@@ -106,11 +118,13 @@ def get_checkpoint(user_id, workspace_id, checkpoint_id):
     Get checkpoint
     """
     db = get_db()
+    """
     #Check user exists
-    if db.execute('SELECT username FROM user WHERE user_id = ?', (user_id,)).fetchone() is None:
+    if db.execute('SELECT username FROM user WHERE id = ?', (user_id,)).fetchone() is None:
         flash('No user with given id, cannot get checkpoint')
         return
-        
+        """
+
     #Check workspace exists
     loc = str(user_id) + '_' + str(workspace_id) + '_' + str(checkpoint_id) + '.csv'
     query = db.execute('SELECT target_filename FROM transactions WHERE user_id = ? AND workspace_id = ? AND target_filename = ? ORDER BY target_filename DESC', (user_id, workspace_id, loc)).fetchone()
@@ -129,10 +143,12 @@ def add_checkpoint(user_id, workspace_id, source_id, df, desc):
     
     db = get_db()
     #Check user exists
-    if db.execute('SELECT username FROM user WHERE user_id = ?', (user_id,)).fetchone() is None:
+    """
+    if db.execute('SELECT username FROM user WHERE id = ?', (user_id,)).fetchone() is None:
         flash('No user with given id, cannot add checkpoint')
         return
-        
+        """
+
     #Check workspace exists
     query = db.execute('SELECT target_filename FROM transactions WHERE user_id = ? AND workspace_id = ? ORDER BY target_filename DESC', (user_id, workspace_id)).fetchone()
     if  query is None:
@@ -161,11 +177,12 @@ def delete_checkpoint(user_id, workspace_id, checkpoint_id):
     """
     
     db = get_db()
+    """
     #Check user exists
-    if db.execute('SELECT username FROM user WHERE user_id = ?', (user_id,)).fetchone() is None:
+    if db.execute('SELECT username FROM user WHERE id = ?', (user_id,)).fetchone() is None:
         flash('No user with given id, cannot delete checkpoint')
         return None
-        
+        """
     #Check workspace exists
     loc = str(user_id) + '_' + str(workspace_id) + '_' + str(checkpoint_id) + '.csv'
     query = db.execute('SELECT target_filename FROM transactions WHERE user_id = ? AND workspace_id = ? AND target_filename = ? ORDER BY target_filename DESC', (user_id, workspace_id, loc)).fetchone()
@@ -175,7 +192,8 @@ def delete_checkpoint(user_id, workspace_id, checkpoint_id):
     
     #Delete csv file
     name = query[0]
-    files = glob.glob('./csv/'+ name)
+    f = glob.glob('./csv/'+ name)[0]
+    print(name,f)
     os.remove(f)
     
     #Delete transaction

@@ -21,6 +21,9 @@ dataColumns = pd.DataFrame()
 selectedX = []
 selectedY = []
 user_log = []
+user_id = 0
+selected_workspace = None
+selected_dataframe = None
 model = None
 graph = None
 selectedModel = None
@@ -28,7 +31,7 @@ selectedModel = None
 
 
 def create_app(test_config = None):
-    UPLOAD_FOLDER = 'C:\\Users\\kargi\\Flask Practi e\\website-app-main-2\\datasets'
+    UPLOAD_FOLDER = 'C:\\Users\\kargi\\Flask Practi e\\see\\datasets'
     ALLOWED_EXTENSIONS = set(['txt', 'csv'])
     app = Flask(__name__) 
     DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite')
@@ -52,8 +55,75 @@ def create_app(test_config = None):
     except OSError:
         pass
 
-
     @app.route('/', methods=['GET', 'POST'])
+    def workspace():
+        print(request.args.get('active_workspace'))
+        global user_id, selected_workspace, selected_dataframe, df
+        
+        if request.method == 'POST':
+            
+            #Add Workspace button clicked, redirect to upload screen
+            if request.form.get('Add Workspace'):
+                return redirect(url_for("upload_file"))
+              
+            #Delete Workspace button clicked, delete current workspace and redirect workspace page
+            elif request.form.get('Delete Workspace'):
+                delete_workspace(user_id, selected_workspace)
+                selected_workspace = None
+                selected_dataframe = None
+                return redirect(url_for("workspace"))
+            
+            #Save DataFrame button clicked, save current dataframe to current workspace
+            elif request.form.get('Save DataFrame'):
+                desc = ""
+                source_df = 0
+                add_checkpoint(user_id, selected_workspace, source_df, df, desc)
+                selected_workspace = None
+                selected_dataframe = None
+                return redirect(url_for("workspace"))
+            
+            #Delete DataFrame button clicked, delete selected dataframe from workspace
+            elif request.form.get('Delete DataFrame'):
+                delete_checkpoint(user_id, selected_workspace, selected_dataframe)
+                selected_workspace = None
+                selected_dataframe = None
+                return redirect(url_for("workspace"))
+            
+            #Select DataFrame button clicked, change current df to selected_dataframe
+            elif request.form.get('Select DataFrame'):
+                df = get_checkpoint(user_id, selected_workspace, selected_dataframe)
+                selected_workspace = None
+                selected_dataframe = None
+                return redirect(url_for("workspace"))
+            #Render first screen
+            return render_template("workspace.html")
+            
+            
+        #Determine which workspace and checkpoint is selected
+        selected_workspace = request.args.get('active_workspace')
+        selected_dataframe = request.args.get('active_dataframe')
+        
+        #Checkpoint selected, print it
+        if selected_dataframe is not None:
+            df2 = get_checkpoint(user_id, selected_workspace, selected_dataframe)
+            print("DF2 is : ", user_id,selected_workspace,selected_dataframe)
+            isLoaded = True
+            return render_template("workspace.html", workspaces = get_workspaces(user_id), DataFrames = get_workspace(user_id, selected_workspace), column_names=df2.columns.values, row_data=list(df2.head(5).values.tolist()),
+                            link_column="Patient ID", zip=zip, isLoaded = isLoaded, 
+                            rowS = df2.shape[0], colS = df2.shape[1], active_workspace = selected_workspace)
+                            
+                            
+        #Only workspace selected, print checkpoints of the workspace
+        elif selected_workspace is not None:
+            print(get_workspace(user_id,selected_workspace),selected_workspace)
+            return render_template("workspace.html", workspaces = get_workspaces(user_id), DataFrames = get_workspace(user_id, selected_workspace), active_workspace = selected_workspace)
+            
+            
+        #Nothing is selected, print workspaces
+        else:
+            return render_template("workspace.html", workspaces = get_workspaces(user_id))
+            
+    @app.route('/upload_file', methods=['GET', 'POST'])
     def upload_file():
         global df
         if request.method == 'POST':
@@ -61,14 +131,14 @@ def create_app(test_config = None):
             # check if the post request has the file part
             print(request.files)
             if 'file' not in request.files:
-                #flash('No file part')
-                return render_template("upload_file.html",errors = ['No file is submitted!'])
+                flash('No file part')
+                return redirect(url_for("upload_file"))
             file = request.files['file']
 
             # check if user does not send any file
             if file.filename == '':
-                #flash('No selected file')
-                return render_template("upload_file.html",errors = ['No file is selected!'])
+                flash('No selected file')
+                return redirect(url_for("upload_file"))
 
             # a valid file is submitted. 
             if file and allowed_file(file.filename):
@@ -89,13 +159,13 @@ def create_app(test_config = None):
 
                 # read the file
                 dataTypes, dataColumns, df = load_dataset(file_path,delimitter=delimitter,qualifier = qualifier, assumption=assumption)
-
-                #return redirect(url_for('select_variables',filename=filename))
+                create_workspace(user_id, df)
                 isLoaded = True
                 return render_template("upload_file.html", column_names=df.columns.values, row_data=list(df.head(5).values.tolist()),
                             link_column="Patient ID", zip=zip, isLoaded = isLoaded, rowS = df.shape[0], colS = df.shape[1])
             else:
-                return render_template("upload_file.html",errors = ['Extension is not correct!'])
+                flash("Extension is not correct !")
+                return redirect(url_for("upload_file"))
         else:                        
             return render_template("upload_file.html")
 
@@ -412,7 +482,7 @@ def create_app(test_config = None):
 
     @app.route("/pca_transform", methods = ["GET","POST"])
     def pca_transform():
-        global user_log
+        global user_log,df
         if request.method == "POST":
             model_selected = df #Selected df as default, this will be changed to model selection later on.
             n_of_component = int(request.form["n_component"]) 
@@ -432,20 +502,20 @@ def create_app(test_config = None):
             elif int(n_of_component) <= 0:
                 return render_template("transformation/pca_transform.html", columns = model_selected.columns,error = "Invalid number of component! Enter a positive number.")
 
-            new_df,pca = PCA_transformation(data = model_selected, reduce_to = n_of_component, var_ratio = variance_ratio)
+            df,pca = PCA_transformation(data = model_selected, reduce_to = n_of_component, var_ratio = variance_ratio)
 
             #This user-log system will be changed later on.
             user_log += [("PCA_Transformation","model_0",
-            "Number of component in dataframe is reduced from {} to {}".format(model_selected.shape[1],new_df.shape[1]))]
+            "Number of component in dataframe is reduced from {} to {}".format(model_selected.shape[1],df.shape[1]))]
             print(user_log)
-            return PCA_transformation_describe(new_df,pca)
+            return PCA_transformation_describe(df,pca)
 
         return render_template("transformation/pca_transform.html")
 
 
     @app.route("/create_column", methods = ["GET","POST"])
     def create_column():
-        global user_log
+        global user_log,df
         if request.method == "POST":
 
             #Catch parameters
@@ -463,11 +533,11 @@ def create_app(test_config = None):
             if selected_parameters == []: # -- no parameter is given
                     return render_template("transformation/create_column.html", columns = selected_model.columns,error = "Please select parameters!")
             
-            new_df = combine_columns(data = selected_model, selected_columns = selected_parameters,
+            df = combine_columns(data = selected_model, selected_columns = selected_parameters,
             new_column_name = new_column_name, mode = selected_mode, delete_column = delete_columns)
-            print(new_df.shape)
+            print(df.shape)
 
-            return render_template("transformation/create_column.html", columns = new_df.columns)
+            return render_template("transformation/create_column.html", columns = df.columns)
 
 
 
@@ -476,11 +546,12 @@ def create_app(test_config = None):
 
     @app.route("/filter_transform", methods = ["GET","POST"])
     def filter_transform():
+        global df
         if request.method == "POST":
             actions = {}
             for col in df.columns:
                     actions[col] = request.form.getlist(col)
-            new_df = filter_data(df,actions)
+            df = filter_data(df,actions)
         return render_template("transformation/filter_transform.html", cols = df.columns, objectCols = df.select_dtypes(include = "object").columns, df = df)
 
 

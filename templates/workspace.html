@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='css/upload_file.css') }}">
+<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='css/workspace.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
 </head>
 
@@ -18,6 +18,7 @@
       <a href="{{ url_for('dist_graph') }} ">Histogram</a>
       <a href="{{ url_for('bar_graph') }} ">Bar Graph</a>
     </div>
+    
   </div>
 
   <div class="dropdown">
@@ -35,17 +36,37 @@
     <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
 </div>
 
-<div class='yazi'>
-  <h1>Upload the file for prediction. </h1>
-  <p><h3>Accepted files are TXT exported from Excel and CSV. </h3></p>
-    <form action="" method=post enctype=multipart/form-data>
-      <p><input type=file name=file>
-      <p>Delimitter (default = ,) <input type = "text" name = "delimitter" /></p>
-      <p>Qualifier (default = "") <input type = "text" name = "qualifier" /></p>
-      <p>First row value types <input type="checkbox" name="is-value-type" value = 1 checked></p>
-      <input type=submit value=Upload>
-    </form>
+<div>
+  <h1>Active Workspaces</h1>
+  <form method="post" >
+<input type="submit" name="Add Workspace" value="Add Workspace">
+ </form>
+  <div class = 'workspaces'>
+  {% if workspaces is not none %}
+    {% for workspace in workspaces %}
+    <a href= "{{ url_for('workspace', active_workspace = workspace ) }}">{{ workspace }}</a>
+    {% endfor %}
+  {% endif %}
 </div>
+</div>
+
+{% if DataFrames is not none %}
+<div> 
+  <h1>Workspace: {{ active_workspace }}</h1>
+    <form method="post" >
+<input type="submit" name="Delete Workspace" value="Delete Workspace">
+ </form>
+  <h2>Active DataFrames</h2>
+    <form method="post" >
+<input type="submit" name="Save DataFrame" value="Save DataFrame">
+ </form>
+  <div class= "workspaces">
+  {% for DataFrame in DataFrames %}
+  <a href= "{{ url_for('workspace', active_workspace =active_workspace, active_dataframe = DataFrame) }}">{{DataFrame}}</a>
+  {% endfor %}
+</div>
+</div>
+{% endif %}
 
 <div class="scrollmenu">
   <table>
@@ -75,8 +96,15 @@
 
 <div class='yazi'>
   {% if isLoaded %}
-    <h2>Data with {{ rowS }} samples and {{ colS }} features is loaded successfully! </h2>
+     <form method="post" >
+     <input type="submit" name="Select DataFrame" value="Select as current DataFrame">
+<input type="submit" name="Delete DataFrame" value="Delete DataFrame">
+ </form>
   {% endif %}
+
+  {% for error in errors %}
+    <h2> {{ error }} </h2>
+  {% endfor %}
 </div>
 
 <div class = "container">
@@ -87,5 +115,6 @@
   </div>
   {% endfor %}
 </div>
+
 
 </html>
