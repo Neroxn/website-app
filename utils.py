@@ -198,7 +198,7 @@ def scatter_matrix(dataset,features):
 
             scatter_plots.append(p)
 
-    grid = gridplot(scatter_plots, ncols = len(dataset_selected.columns), tools = TOOLS)
+    grid = gridplot(scatter_plots, ncols = len(dataset_selected.columns))
 
     script, div = components(grid)
     return render_template(
@@ -644,3 +644,17 @@ def filter_data(data, actions):
         data = data[condition]
         print(data.shape)
     return copy_data.loc[data.index]
+
+def clear_log(session,log):
+    """
+    Save the current log
+    Log will be in form of
+    <description> at <Timestamp>
+    """
+    if log not in session:
+        session["log"] = []
+
+    else:
+        session["log"] = []
+
+    return session["log"]

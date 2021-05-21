@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="{{ url_for('static',filename='js/create_colmn.css') }}"></script>
+<script src="{{ url_for('static',filename='js/create_column.js') }}"></script>
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/create_column.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
     <meta charset="UTF-8">
@@ -48,7 +48,7 @@
       
 
 <form action="" method = "post" enctype="multipart/form-data">
-    <h2 style = "color : red"> Select parameters for creating new colum : </h2>
+    <h2> Select parameters for creating new colum : </h2>
     <div class = "container">
     <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
     <ul id="myUL">
@@ -58,7 +58,7 @@
     </div>  
       <input type="checkbox" onClick="toggle(this)" /> Toggle All<br/>
     </ul>
-    <h2 style = "color : red;">Choose operation and parameters to create a new column.</h2>
+    <h2>Choose operation and parameters to create a new column.</h2>
     <input type="radio" name="selected_mode" value="sum" checked> Sum 
     <input type="radio" name="selected_mode" value="mean"> Mean 
     <input type="radio" name="selected_mode" value="difference"> Difference 
@@ -66,7 +66,7 @@
     <input type="radio" name="selected_mode" value="drop-nan-rows"> Drop NaN Rows
     <input type="radio" name="selected_mode" value="drop-nan-columns"> Drop NaN Columns
     <p><input type="checkbox" name = "delete_columns" value ="1" checked> Delete used columns </p>
-    <p><input type="text" name = "new_column_name" required> New column name</p>
+    <p><input type="text" name = "new_column_name" > New column name</p>
     <input type="submit" value="submit">
 </form>
 

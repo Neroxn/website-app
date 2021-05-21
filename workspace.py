@@ -163,7 +163,7 @@ def add_checkpoint(user_id, workspace_id, source_id, df, desc):
     source = (str(user_id) + '_' + str(workspace_id) + '_' + str(source_id) + '.csv')
     
     #Add checkpoint
-    db.execute('INSERT INTO transactions (user_id, workspace_id, source_filename, target_filename, description) VALUES (?, ?, ?, ?, ?)', (user_id, 0, source, target, desc))
+    db.execute('INSERT INTO transactions (user_id, workspace_id, source_filename, target_filename, description) VALUES (?, ?, ?, ?, ?)', (user_id, workspace_id, source, target, desc))
     db.commit()
     
     #Save dataframe

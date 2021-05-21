@@ -25,9 +25,9 @@ label:hover {
 }
 
 .container { 
-	border: 2px; 
+	border:2px; 
 	solid #ccc; 
-	width: 300px; 
-	height: 300px; 
+	width:500px; 
+	height: 500px; 
 	overflow-y: scroll;
 }

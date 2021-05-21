@@ -1,12 +1,8 @@
 import os
 import numpy as np  
 import pandas as pd
-from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput
-from bokeh.io import curdoc
 from bokeh.resources import INLINE
-from bokeh.embed import components
-from bokeh.plotting import figure, output_file, show
-from flask import Flask, request, redirect, url_for,render_template,Response
+from flask import Flask, request, redirect, url_for,render_template,session
 from werkzeug.utils import secure_filename
 from utils import *
 from modelTrain import *
@@ -14,17 +10,12 @@ from preprocess import *
 from db import *
 from workspace import *
 from sklearn.model_selection import train_test_split
+import datetime
+
 
 ### These variables will be fixed later on as they are global and will cause errors. ###
-df = pd.read_csv("DataCasiaEhr.csv")
 dataColumns = pd.DataFrame()
-selectedX = []
-selectedY = []
-user_log = []
-user_id = 0
-selected_workspace = None
-selected_dataframe = None
-model = None
+df = pd.DataFrame()
 graph = None
 selectedModel = None
 ########################################################################################
@@ -57,71 +48,75 @@ def create_app(test_config = None):
 
     @app.route('/', methods=['GET', 'POST'])
     def workspace():
-        print(request.args.get('active_workspace'))
-        global user_id, selected_workspace, selected_dataframe, df
-        
+        global df
+        if not session.get("user_id"):
+            session["user_id"] = 0
+
+
         if request.method == 'POST':
             
             #Add Workspace button clicked, redirect to upload screen
             if request.form.get('Add Workspace'):
                 return redirect(url_for("upload_file"))
+
               
             #Delete Workspace button clicked, delete current workspace and redirect workspace page
             elif request.form.get('Delete Workspace'):
-                delete_workspace(user_id, selected_workspace)
-                selected_workspace = None
-                selected_dataframe = None
+                delete_workspace(session["user_id"], session["selected_workspace"])
+                session["selected_workspace"] = None
+                session["selected_dataframe"] = None
                 return redirect(url_for("workspace"))
             
             #Save DataFrame button clicked, save current dataframe to current workspace
             elif request.form.get('Save DataFrame'):
-                desc = ""
                 source_df = 0
-                add_checkpoint(user_id, selected_workspace, source_df, df, desc)
-                selected_workspace = None
-                selected_dataframe = None
+                desc = ""
+                add_checkpoint(session["user_id"], session["selected_workspace"], source_df, df, desc)
+                session["selected_workspace"] = None
+                session["selected_dataframe"] = None
                 return redirect(url_for("workspace"))
             
             #Delete DataFrame button clicked, delete selected dataframe from workspace
             elif request.form.get('Delete DataFrame'):
-                delete_checkpoint(user_id, selected_workspace, selected_dataframe)
-                selected_workspace = None
-                selected_dataframe = None
+                delete_checkpoint(session["user_id"], session["selected_workspace"], session["selected_dataframe"])
+                session["selected_workspace"] = None
+                session["selected_dataframe"] = None
                 return redirect(url_for("workspace"))
             
-            #Select DataFrame button clicked, change current df to selected_dataframe
+            #Select DataFrame button clicked, change current df to session["selected_dataframe"]
             elif request.form.get('Select DataFrame'):
-                df = get_checkpoint(user_id, selected_workspace, selected_dataframe)
-                selected_workspace = None
-                selected_dataframe = None
+                df = get_checkpoint(session["user_id"], session["selected_workspace"], session["selected_dataframe"])
+                session["selected_workspace"] = None
+                session["selected_dataframe"] = None
                 return redirect(url_for("workspace"))
             #Render first screen
             return render_template("workspace.html")
             
             
         #Determine which workspace and checkpoint is selected
-        selected_workspace = request.args.get('active_workspace')
-        selected_dataframe = request.args.get('active_dataframe')
+        session["selected_workspace"] = request.args.get('active_workspace')
+        session["selected_dataframe"] = request.args.get('active_dataframe')
+        print("Selected workspace and dataframe is :",session["selected_workspace"],session["selected_dataframe"])
         
         #Checkpoint selected, print it
-        if selected_dataframe is not None:
-            df2 = get_checkpoint(user_id, selected_workspace, selected_dataframe)
-            print("DF2 is : ", user_id,selected_workspace,selected_dataframe)
+        if session["selected_dataframe"] is not None:
+            df2 = get_checkpoint(session["user_id"], session["selected_workspace"], session["selected_dataframe"])
+            print("DF2 is : ", session["user_id"],session["selected_workspace"],session["selected_dataframe"])
             isLoaded = True
-            return render_template("workspace.html", workspaces = get_workspaces(user_id), DataFrames = get_workspace(user_id, selected_workspace), column_names=df2.columns.values, row_data=list(df2.head(5).values.tolist()),
+            return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]), DataFrames = get_workspace(session["user_id"], session["selected_workspace"]), column_names=df2.columns.values, row_data=list(df2.head(5).values.tolist()),
                             link_column="Patient ID", zip=zip, isLoaded = isLoaded, 
-                            rowS = df2.shape[0], colS = df2.shape[1], active_workspace = selected_workspace)
+                            rowS = df2.shape[0], colS = df2.shape[1], active_workspace = session["selected_workspace"])
                             
                             
         #Only workspace selected, print checkpoints of the workspace
-        elif selected_workspace is not None:
-            print(get_workspace(user_id,selected_workspace),selected_workspace)
-            return render_template("workspace.html", workspaces = get_workspaces(user_id), DataFrames = get_workspace(user_id, selected_workspace), active_workspace = selected_workspace)
+        elif session["selected_workspace"] is not None:
+            print(get_workspace(session["user_id"],session["selected_workspace"]),session["selected_workspace"])
+            return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]), DataFrames = get_workspace(session["user_id"], session["selected_workspace"]), active_workspace = session["selected_workspace"])
             
             
         #Nothing is selected, print workspaces
         else:
-            return render_template("workspace.html", workspaces = get_workspaces(user_id))
+            return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]))
             
     @app.route('/upload_file', methods=['GET', 'POST'])
     def upload_file():
@@ -158,8 +153,11 @@ def create_app(test_config = None):
                     assumption = False
 
                 # read the file
-                dataTypes, dataColumns, df = load_dataset(file_path,delimitter=delimitter,qualifier = qualifier, assumption=assumption)
-                create_workspace(user_id, df)
+                _, _, df = load_dataset(file_path,delimitter=delimitter,qualifier = qualifier, assumption=assumption)
+                create_workspace(session["user_id"], df)
+                
+                #description = str(session["user_id"]) + " created new workspace at ",datetime.datetime.now()
+                #session["user_log"] = log_save(session["user_log"],description)
                 isLoaded = True
                 return render_template("upload_file.html", column_names=df.columns.values, row_data=list(df.head(5).values.tolist()),
                             link_column="Patient ID", zip=zip, isLoaded = isLoaded, rowS = df.shape[0], colS = df.shape[1])
@@ -172,9 +170,14 @@ def create_app(test_config = None):
     #Select x-variables among checkboxes
     @app.route("/select_variables", methods = ["GET","POST"])
     def select_variables():
-        global selectedX,df
+        global df
+        if not session.get("selected_x"):
+            session["selected_x"] = []
+
+
+
         if request.method == 'POST':
-            selectedX = request.form.getlist('hello')
+            session["selected_x"] = request.form.getlist('hello')
             return redirect(url_for('select_y'))
 
         if(len(df) != 0):
@@ -187,15 +190,17 @@ def create_app(test_config = None):
     #Select y-variables among checkboxes
     @app.route("/select_y",methods = ["GET","POST"])
     def select_y():
-        global selectedY
+        global df
+        if not session.get("selected_y"):
+            session["selected_y"] = []
+
         if request.method == 'POST':
-            selectedY = request.form.getlist('hello')
+            session["selected_y"] = request.form.getlist('hello')
             return redirect(url_for('selectAlgo'))
 
-        finalColumnNamesY= []
-        possibleDf =df.drop(selectedX,axis=1)
+        possibleDf = df.drop(session["selected_x"],axis=1)
         
-        if(len(df) != 0):
+        if(len(possibleDf) != 0):
             dtypes, cols = groupColumns(possibleDf)
         else:
             dtypes = []
@@ -205,6 +210,13 @@ def create_app(test_config = None):
 
     @app.route("/selectAlgo", methods = ["GET","POST"])
     def selectAlgo():
+        global df
+        if not session.get("selected_x"):
+            session["selected_x"] = []
+
+        if not session.get("selected_y"):
+            session["selected_y"] = []
+
         if request.method == 'POST':
             selectedAlgo = request.form['selector']
             
@@ -264,20 +276,20 @@ def create_app(test_config = None):
                     degree = 3
                 
                 #Parameters are valid, train time
-                df2 = df[selectedX+selectedY]
+                df2 = df[session["selected_x"]+session["selected_y"]]
                 df2 = dropNanAndDuplicates(df2, 0.75)
                 df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
-                df2, scaler, scalerY = scale(df2, selectedY)
-                trainX, testX, trainY, testY = train_test_split(df2[selectedX], df2[selectedY], 
+                df2, scaler, scalerY = scale(df2, session["selected_y"])
+                trainX, testX, trainY, testY = train_test_split(df2[session["selected_x"]], df2[session["selected_y"]], 
                                                                 test_size= 0.15, shuffle= True)
             
-                model = applySVM(trainX, trainY, kernel= kernel, c= float(C), gamma= gamma, degree= float(degree))
+                session["model"] = applySVM(trainX, trainY, kernel= kernel, c= float(C), gamma= gamma, degree= float(degree))
             
                 #Train is done, predict time
-                result = model.predict(testX).reshape((len(testX),-1))
+                result = session["model"].predict(testX).reshape((len(testX),-1))
                 result = scalerY.inverse_transform(result)
                 if encoderArr:
-                    result = stringDecoder(result, encoderArr, selectedY)
+                    result = stringDecoder(result, encoderArr, session["selected_y"])
             
                 return redirect(url_for('results', actual= testY, prediction= result))
                 
@@ -325,17 +337,17 @@ def create_app(test_config = None):
                         return redirect(url_for('selectAlgo'))
                             
                 #Parameters are valid, train time
-                df2 = df[selectedX+selectedY]
+                df2 = df[session["selected_x"]+session["selected_y"]]
                 df2 = dropNanAndDuplicates(df2, 0.75)
                 df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
-                trainX, testX, trainY, testY = train_test_split(df2[selectedX], df2[selectedY], 
+                trainX, testX, trainY, testY = train_test_split(df2[session["selected_x"]], df2[session["selected_y"]], 
                                                                 test_size= 0.15, shuffle= True)
-                model = applyRandomForest(trainX, trainY, numberEstimator= numberEstimator, maxDepth = maxDepth, minSamplesLeaf=minSamplesLeaf)
+                session["model"] = applyRandomForest(trainX, trainY, numberEstimator= numberEstimator, maxDepth = maxDepth, minSamplesLeaf=minSamplesLeaf)
             
                 #Train is done, predict time
-                result = model.predict(testX).reshape((len(testX),-1))
+                result = session["model"].predict(testX).reshape((len(testX),-1))
                 if encoderArr:
-                    result = stringDecoder(result, encoderArr, selectedY)
+                    result = stringDecoder(result, encoderArr, session["selected_y"])
                     
                 return redirect(url_for('results', actual= testY, prediction= result))
                 
@@ -370,40 +382,22 @@ def create_app(test_config = None):
                     loss = request.form['loss']
                 
                 #Parameters are valid, train time
-                df2 = df[selectedX+selectedY]
+                df2 = df[session["selected_x"]+session["selected_y"]]
                 df2 = dropNanAndDuplicates(df2, 0.75)
                 df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
-                trainX, testX, trainY, testY = train_test_split(df2[selectedX], df2[selectedY], 
+                trainX, testX, trainY, testY = train_test_split(df2[session["selected_x"]], df2[session["selected_y"]], 
                                                                 test_size= 0.15, shuffle= True)
-                model = applyAdaBoost(trainX, trainY, numberEstimator= numberEstimator, learningRate= learningRate, loss=loss)
+                session["model"] = applyAdaBoost(trainX, trainY, numberEstimator= numberEstimator, learningRate= learningRate, loss=loss)
             
                 #Train is done, predict time
-                result = model.predict(testX).reshape((len(testX),-1))
+                result = session["model"].predict(testX).reshape((len(testX),-1))
                 if encoderArr:
-                    result = stringDecoder(result, encoderArr, selectedY)
+                    result = stringDecoder(result, encoderArr, session["selected_y"])
             
                 return redirect(url_for('results', actual= testY, prediction= result))
             
         return render_template("select_algo.html")
 
-    @app.route('/visualize',methods = ["GET","POST"])
-    def visualize():
-        print(request.method)
-        if request.method == 'POST':
-
-            if request.form['selector'] == "scatter":
-                return redirect(url_for('scatter_graph'))
-
-            elif request.form['selector'] == "corr":
-                return redirect(url_for('correlation_graph'))
-
-            elif request.form['selector'] == "pie":
-                return redirect(url_for('pie_graph'))
-
-            elif request.form['selector'] == "dist":
-                return redirect(url_for('dist_graph'))
-
-        return render_template('graphs/visualize.html', graphSelected = False)
         
     @app.route('/scatter_graph', methods = ["GET","POST"])
     def scatter_graph():
@@ -437,7 +431,7 @@ def create_app(test_config = None):
             else:
                 return render_template('graphs/correlation_plot.html',columns = df.select_dtypes(exclude = ['object']).columns,error = "Please select parameters to process.")
 
-        return render_template('graphs/correlation_plot.html',columns = df.select_dtypes(exclude = ['object']).columns)
+        return render_template('graphs/correlation_plot.html',columns =df.select_dtypes(exclude = ['object']).columns)
 
 
     @app.route('/pie_graph', methods = ["GET","POST"])
@@ -445,9 +439,14 @@ def create_app(test_config = None):
         global df
         if request.method == "POST":
             if request.form.getlist("parameters") != []:
-                return pie_plot(df.select_dtypes(include = ["object"]),request.form.getlist("parameters"))
+                if request.form.get("sort-values"):
+                    sort_values = True
+                else:
+                    sort_values = False
+                return pie_plot(df.select_dtypes(include = ["object"]),request.form.getlist("parameters"),sort_values)
             else:
-                return render_template('graphs/pie_plot.html',columns =  df.select_dtypes(include = ["object"]).columns,error = "Please select parameters to process.")
+                flash("Please select parameters to process.")
+                return redirect('pie_plot')
 
         return render_template('graphs/pie_plot.html',columns = df.select_dtypes(include = ["object"]).columns)
 
@@ -482,11 +481,20 @@ def create_app(test_config = None):
 
     @app.route("/pca_transform", methods = ["GET","POST"])
     def pca_transform():
-        global user_log,df
+        global df
         if request.method == "POST":
-            model_selected = df #Selected df as default, this will be changed to model selection later on.
-            n_of_component = int(request.form["n_component"]) 
-            print(request.form) 
+            
+            if request.form["n_component"].isnumeric():
+                n_of_component = int(request.form["n_component"]) 
+                if int(n_of_component) > len(df):
+                    n_of_component = len(df)
+            
+                elif int(n_of_component) <= 0:
+                    flash("Invalid number of component! Enter a positive number.")
+                    return redirect("pca_transform")
+
+            else:
+                n_of_component = None
 
             #Check if variance ratio is given
             if request.form["variance_ratio"] != "":
@@ -494,20 +502,13 @@ def create_app(test_config = None):
             else:
                 variance_ratio = None
 
-            #Drop NaN-values (This will be fixed later as it causes error) and transform the data
-            model_selected.dropna(axis=1,inplace=True)
-            if int(n_of_component) > len(model_selected):
-                n_of_component = len(model_selected)
-            
-            elif int(n_of_component) <= 0:
-                return render_template("transformation/pca_transform.html", columns = model_selected.columns,error = "Invalid number of component! Enter a positive number.")
+            if df.isnull().sum().sum() != 0:
+                flash("NaN value detected!")
+                return redirect("pca_transform")
 
-            df,pca = PCA_transformation(data = model_selected, reduce_to = n_of_component, var_ratio = variance_ratio)
 
+            df,pca = PCA_transformation(data = df, reduce_to = n_of_component, var_ratio = variance_ratio)
             #This user-log system will be changed later on.
-            user_log += [("PCA_Transformation","model_0",
-            "Number of component in dataframe is reduced from {} to {}".format(model_selected.shape[1],df.shape[1]))]
-            print(user_log)
             return PCA_transformation_describe(df,pca)
 
         return render_template("transformation/pca_transform.html")
@@ -515,32 +516,33 @@ def create_app(test_config = None):
 
     @app.route("/create_column", methods = ["GET","POST"])
     def create_column():
-        global user_log,df
+        global df
         if request.method == "POST":
 
             #Catch parameters
-            selected_model = df
             selected_parameters = request.form.getlist("selected_parameters")
             selected_mode = request.form["selected_mode"]
-            delete_columns = int(request.form["delete_columns"])
-            new_column_name = request.form["new_column_name"]
+            if request.form.get("delete_columns"):
+                delete_columns = True
+            else:
+                delete_columns = False
+            new_column_name = request.form.get("new_column_name")
             
-            if new_column_name in selected_model.columns: # -- check if column name exist
-                return render_template("transformation/create_column.html", columns = selected_model.columns,error = "This column name is already exist. Please enter a non-exist name.")
-            elif new_column_name == "": # -- check if column name is not entered
-                return render_template("transformation/create_column.html", columns = selected_model.columns,error = "Column name is not selected!")
+            if new_column_name in df.columns: # -- check if column name exist
+                flash("This column name is already exist!")
+                return redirect("create_column")
+
+            elif (new_column_name == None or new_column_name == "") and (selected_mode != "drop-nan-rows" and selected_mode != "drop-nan-columns"): # -- check if column name is not entered
+                flash("Please enter a column name!")
+                return redirect("create_column")
 
             if selected_parameters == []: # -- no parameter is given
-                    return render_template("transformation/create_column.html", columns = selected_model.columns,error = "Please select parameters!")
+                flash("Please select parameters!")
+                return redirect("create_column")
             
-            df = combine_columns(data = selected_model, selected_columns = selected_parameters,
+            df = combine_columns(data = df, selected_columns = selected_parameters,
             new_column_name = new_column_name, mode = selected_mode, delete_column = delete_columns)
             print(df.shape)
-
-            return render_template("transformation/create_column.html", columns = df.columns)
-
-
-
 
         return render_template("transformation/create_column.html", columns = df.columns)
 
@@ -551,7 +553,7 @@ def create_app(test_config = None):
             actions = {}
             for col in df.columns:
                     actions[col] = request.form.getlist(col)
-            df = filter_data(df,actions)
+            df = filter_data(df,actions).to_dict('list')
         return render_template("transformation/filter_transform.html", cols = df.columns, objectCols = df.select_dtypes(include = "object").columns, df = df)
 
 
@@ -567,12 +569,12 @@ def create_app(test_config = None):
                         
     @app.route("/results", methods = ["GET","POST"])
     def results():
-        global model,graph,selectedX,selectedY,selectedModel
+        global session["model"],graph,session["selected_x"],session["selected_y"],selectedModel
         if request.method == "GET": 
-            if model != None:
-                return_result_graph(model,selectedModel) #This will return graph and upload file option
+            if session["model"] != None:
+                return_result_graph(session["model"],selectedModel) #This will return graph and upload file option
             else:
-                return render_template("results.html", error = "Please train the model first!", modelExist = False)
+                return render_template("results.html", error = "Please train the session["model"] first!", modelExist = False)
 
         elif request.method == "POST":
             # check if the post request has the file part
@@ -612,12 +614,12 @@ def create_app(test_config = None):
                 ##################################
                 
                 if yExist:
-                    return proccess_and_show(model = model, selectedX = selectedX, selectedY = selectedY, testX = df, selectedModel = selectedModel) 
+                    return proccess_and_show(session["model"] = session["model"], session["selected_x"] = session["selected_x"], session["selected_y"] = session["selected_y"], testX = df, selectedModel = selectedModel) 
                 else:
-                    return proccess_and_show(model = model, selectedX = selectedX, selectedY = [], testX = df, selectedModel = selectedModel) 
+                    return proccess_and_show(session["model"] = session["model"], session["selected_x"] = session["selected_x"], session["selected_y"] = [], testX = df, selectedModel = selectedModel) 
 
             else:
-                return return_result_graph(model,selectedModel)
+                return return_result_graph(session["model"],selectedModel)
 
         return "To be continued"
     """        
