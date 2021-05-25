@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 from utils import *
 from modelTrain import *
 from preprocess import *
+from auth import *
 from db import *
 from workspace import *
 from sklearn.model_selection import train_test_split
@@ -46,7 +47,13 @@ def create_app(test_config = None):
     except OSError:
         pass
 
-    @app.route('/', methods=['GET', 'POST'])
+    
+    @app.route('/')
+    def entry():
+        print("Test")
+        return redirect(url_for('auth.login'))
+
+    @app.route('/workspace', methods=['GET', 'POST'])
     def workspace():
         global df
         if not session.get("user_id"):
@@ -193,6 +200,9 @@ def create_app(test_config = None):
         global df
         if not session.get("selected_y"):
             session["selected_y"] = []
+
+        if not session.get("selected_x"):
+            session["selected_x"] = []
 
         if request.method == 'POST':
             session["selected_y"] = request.form.getlist('hello')
@@ -558,6 +568,9 @@ def create_app(test_config = None):
 
 
 
+    @app.route('/result',methods=["GET","POST"])
+    def result():
+        return "SIKE"
             
     """        
     @app.route('/getPlotCSV') # this is a job for GET, not POST
@@ -623,6 +636,8 @@ def create_app(test_config = None):
 
         return "To be continued"
     """        
+
+    app.register_blueprint(bp, url_prefix='/auth')
     init_app(app)
     return app
 

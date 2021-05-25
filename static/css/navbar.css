@@ -68,3 +68,8 @@
 .dropdown:hover .dropdown-content {
   display: block;
 }
+/* Logout button on navbar*/
+.logout {
+  position: absolute;
+  right: 2vw;
+}
