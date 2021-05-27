@@ -117,5 +117,14 @@
   {% endfor %}
 </div>
 
-
+<div class = "scrollmenu">
+  {% for log in logs %}
+  <ul>
+    {{ log }}
+  </ul>
+  {% endfor %}
+</div>
+<form method="post" >
+  <input type="submit" name="Clear Log" value="Clear Log">
+   </form>
 </html>

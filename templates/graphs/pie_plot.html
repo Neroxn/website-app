@@ -186,6 +186,9 @@ label:hover {
   </form>
 
 {% if graphSelected %}
+<a href="{{ url_for('download_csv',path = path) }}">Click here to download graph as csv.</a>
+{% endif %}
+{% if graphSelected %}
 <h1 style="text-align: center; margin-bottom: 40px;"> Pie Plot of parameters 
   {% for parameter in selected %}
   {{parameter}},

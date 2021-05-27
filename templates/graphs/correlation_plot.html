@@ -164,6 +164,12 @@ label:hover {
     <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
 </div>
 
+
+{% if graphSelected %}
+<a href="{{ url_for('download_csv',path = path) }}">Click here to download graph as csv.</a>
+{% endif %}
+
+
   <h2> Select featrures for correlation matrix : </h2>
   <form method="post">
   <div class = "container">
@@ -178,12 +184,6 @@ label:hover {
   </ul>
   </form>
 
-{% if graphSelected %}
-<h1 style="text-align: center; margin-bottom: 40px;"> Correlation Matrix </h1>
-<div style="display: flex; justify-content: center;">
-    {{ plot_div|indent(4)|safe }}
-</div>
-{% endif %}
 
 <div class = "container">
   {% for message in get_flashed_messages() %}

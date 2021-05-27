@@ -2,7 +2,7 @@ import os
 import numpy as np  
 import pandas as pd
 from bokeh.resources import INLINE
-from flask import Flask, request, redirect, url_for,render_template,session
+from flask import Flask, request, redirect, url_for,render_template,session,Response, send_file
 from werkzeug.utils import secure_filename
 from utils import *
 from modelTrain import *
@@ -15,7 +15,6 @@ import datetime
 
 
 ### These variables will be fixed later on as they are global and will cause errors. ###
-dataColumns = pd.DataFrame()
 df = pd.DataFrame()
 graph = None
 selectedModel = None
@@ -50,16 +49,21 @@ def create_app(test_config = None):
     
     @app.route('/')
     def entry():
-        print("Test")
+        if session.get('user_id'):
+            return redirect(url_for('workspace'))
         return redirect(url_for('auth.login'))
 
     @app.route('/workspace', methods=['GET', 'POST'])
     def workspace():
         global df
+        print(session.get('user_id'))
         if not session.get("user_id"):
             session["user_id"] = 0
 
+        if not session.get('user_log'):
+            session['user_log'] = []
 
+        print("User log is : ",session.get('user_log'))
         if request.method == 'POST':
             
             #Add Workspace button clicked, redirect to upload screen
@@ -96,8 +100,12 @@ def create_app(test_config = None):
                 session["selected_workspace"] = None
                 session["selected_dataframe"] = None
                 return redirect(url_for("workspace"))
+
+            elif request.form.get('Clear Log'):
+                session['user_log'] = []
+                return redirect(url_for("workspace"))
             #Render first screen
-            return render_template("workspace.html")
+            return render_template("workspace.html",logs=session.get('user_log'))
             
             
         #Determine which workspace and checkpoint is selected
@@ -112,22 +120,25 @@ def create_app(test_config = None):
             isLoaded = True
             return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]), DataFrames = get_workspace(session["user_id"], session["selected_workspace"]), column_names=df2.columns.values, row_data=list(df2.head(5).values.tolist()),
                             link_column="Patient ID", zip=zip, isLoaded = isLoaded, 
-                            rowS = df2.shape[0], colS = df2.shape[1], active_workspace = session["selected_workspace"])
+                            rowS = df2.shape[0], colS = df2.shape[1], active_workspace = session["selected_workspace"],logs=session.get('user_log'))
                             
                             
         #Only workspace selected, print checkpoints of the workspace
         elif session["selected_workspace"] is not None:
             print(get_workspace(session["user_id"],session["selected_workspace"]),session["selected_workspace"])
-            return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]), DataFrames = get_workspace(session["user_id"], session["selected_workspace"]), active_workspace = session["selected_workspace"])
+            return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]), DataFrames = get_workspace(session["user_id"], session["selected_workspace"]), active_workspace = session["selected_workspace"],logs=session.get('user_log'))
             
             
         #Nothing is selected, print workspaces
         else:
-            return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]))
+            return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]),logs=session.get('user_log'))
             
     @app.route('/upload_file', methods=['GET', 'POST'])
     def upload_file():
         global df
+        if not session.get('user_log'):
+            session['user_log'] = []
+
         if request.method == 'POST':
 
             # check if the post request has the file part
@@ -163,8 +174,8 @@ def create_app(test_config = None):
                 _, _, df = load_dataset(file_path,delimitter=delimitter,qualifier = qualifier, assumption=assumption)
                 create_workspace(session["user_id"], df)
                 
-                #description = str(session["user_id"]) + " created new workspace at ",datetime.datetime.now()
-                #session["user_log"] = log_save(session["user_log"],description)
+                description = str(session["user_id"]) + " created new workspace at ",str(datetime.datetime.now())
+                session["user_log"] += [description]
                 isLoaded = True
                 return render_template("upload_file.html", column_names=df.columns.values, row_data=list(df.head(5).values.tolist()),
                             link_column="Patient ID", zip=zip, isLoaded = isLoaded, rowS = df.shape[0], colS = df.shape[1])
@@ -181,10 +192,13 @@ def create_app(test_config = None):
         if not session.get("selected_x"):
             session["selected_x"] = []
 
-
+        if not session.get('user_log'):
+            session['user_log'] = []
 
         if request.method == 'POST':
             session["selected_x"] = request.form.getlist('hello')
+            description = str(datetime.datetime.now()), " Selected  " + str(len(session['selected_x'])) + " many variables for the model."
+            session["user_log"] += [description]
             return redirect(url_for('select_y'))
 
         if(len(df) != 0):
@@ -204,8 +218,13 @@ def create_app(test_config = None):
         if not session.get("selected_x"):
             session["selected_x"] = []
 
+        if not session.get('user_log'):
+            session['user_log'] = []
+
         if request.method == 'POST':
             session["selected_y"] = request.form.getlist('hello')
+            description = str(datetime.datetime.now()), " Selected  " + str(len(session['selected_y'])) + " many target for the model."
+            session["user_log"] += [description]
             return redirect(url_for('selectAlgo'))
 
         possibleDf = df.drop(session["selected_x"],axis=1)
@@ -412,6 +431,9 @@ def create_app(test_config = None):
     @app.route('/scatter_graph', methods = ["GET","POST"])
     def scatter_graph():
         global df
+
+        if not session.get('user_log'):
+            session['user_log'] = []
         if request.method == "POST":
             if 'parameters' in request.form:
                 selected_features = request.form.getlist('parameters')
@@ -426,6 +448,8 @@ def create_app(test_config = None):
                 return render_template('graphs/scatter_plot.html',columns = df.columns,error = "You have selected less than 2 features!. Please select again.")
             
             else:
+                description = str(datetime.datetime.now()), " Scatter matrix is created with   " + str(len(selected_features)) +" variables."
+                session["user_log"] += [description]
                 return scatter_matrix(df,selected_features)
         return render_template('graphs/scatter_plot.html',columns = df.columns)
 
@@ -436,6 +460,8 @@ def create_app(test_config = None):
         if request.method == "POST":
             if 'parameters' in request.form:
                 selected_features = request.form.getlist('parameters')
+                description = str(datetime.datetime.now()), " Correlation matrix is created with   " + str(len(selected_features)) +" variables."
+                session["user_log"] += [description]
                 return correlation_plot(df.select_dtypes(exclude = ['object']),selected_features)
                 
             else:
@@ -453,7 +479,11 @@ def create_app(test_config = None):
                     sort_values = True
                 else:
                     sort_values = False
+
+                description = str(datetime.datetime.now()), " Pie graph is created with   " + str(len(request.form.getlist('parameters'))) +" variables."
+                session["user_log"] += [description]
                 return pie_plot(df.select_dtypes(include = ["object"]),request.form.getlist("parameters"),sort_values)
+
             else:
                 flash("Please select parameters to process.")
                 return redirect('pie_plot')
@@ -463,10 +493,15 @@ def create_app(test_config = None):
     @app.route('/dist_graph', methods = ["GET","POST"])
     def dist_graph():
         global df
+
+        if not session.get('user_log'):
+            session['user_log'] = []
         if request.method == "POST":
             print(request.form)
             if 'selected_parameter' in request.form:
                 numberBin = 20 if (request.form['numberBin'].isnumeric() == False) else int(request.form['numberBin'])
+                description = str(datetime.datetime.now()), " Scatter matrix is created for   " + request.form['selected_parameter']
+                session["user_log"] += [description]
                 return dist_plot(df.select_dtypes(exclude = ['object']),request.form['selected_parameter'],numberBin)
             else:
                 return render_template('graphs/dist_plot.html',columns =df.select_dtypes(exclude = ['object']).columns, error = "Please choose the parameter for histogram!")
@@ -475,6 +510,8 @@ def create_app(test_config = None):
     @app.route('/bar_graph', methods = ["GET","POST"])
     def bar_graph():
         global df
+        if not session.get('user_log'):
+            session['user_log'] = []
         if request.method == "POST":
             print(request.form)
             if request.form.getlist("parameters") != []:
@@ -482,16 +519,20 @@ def create_app(test_config = None):
                     selectedType = request.form["selected_type"]
                 else:
                     selectedType = "Horizontal"
-
+                description = str(datetime.datetime.now()), " Scatter matrix is created with   " + str(len(request.form.getlist("parameters"))) +" variables."
+                session["user_log"] += [description]
                 return bar_plot(df.select_dtypes(include = ['object']),request.form.getlist("parameters"),selectedType)
             else:
-                return render_template('graphs/bar_plot.html',columns =df.select_dtypes(include = ['object']).columns, error = "Please choose the parameter for bar graph!")
+                return render_template('graphs/bar_plot.html',columns =df.select_dtypes(include = ['object']).columns)
         return render_template('graphs/bar_plot.html',columns = df.select_dtypes(include = ['object']).columns)
 
 
     @app.route("/pca_transform", methods = ["GET","POST"])
     def pca_transform():
         global df
+
+        if not session.get('user_log'):
+            session['user_log'] = []
         if request.method == "POST":
             
             if request.form["n_component"].isnumeric():
@@ -519,6 +560,8 @@ def create_app(test_config = None):
 
             df,pca = PCA_transformation(data = df, reduce_to = n_of_component, var_ratio = variance_ratio)
             #This user-log system will be changed later on.
+            description = str(datetime.datetime.now()), " PCA transformation is applied."
+            session["user_log"] += [description]
             return PCA_transformation_describe(df,pca)
 
         return render_template("transformation/pca_transform.html")
@@ -527,6 +570,9 @@ def create_app(test_config = None):
     @app.route("/create_column", methods = ["GET","POST"])
     def create_column():
         global df
+
+        if not session.get('user_log'):
+            session['user_log'] = []
         if request.method == "POST":
 
             #Catch parameters
@@ -552,21 +598,34 @@ def create_app(test_config = None):
             
             df = combine_columns(data = df, selected_columns = selected_parameters,
             new_column_name = new_column_name, mode = selected_mode, delete_column = delete_columns)
-            print(df.shape)
+            description = str(datetime.datetime.now()), " New column is created."
+            session["user_log"] += [description]
 
         return render_template("transformation/create_column.html", columns = df.columns)
 
     @app.route("/filter_transform", methods = ["GET","POST"])
     def filter_transform():
         global df
+        if not session.get('user_log'):
+            session['user_log'] = []
         if request.method == "POST":
             actions = {}
             for col in df.columns:
                     actions[col] = request.form.getlist(col)
             df = filter_data(df,actions).to_dict('list')
+            description = str(datetime.datetime.now()), " Parameters are filtered." 
+            session["user_log"] += [description]
         return render_template("transformation/filter_transform.html", cols = df.columns, objectCols = df.select_dtypes(include = "object").columns, df = df)
 
-
+    @app.route('/download_csv')
+    def download_csv():
+        path = request.args.get('path')
+        print(path)
+        if path is None:
+            flash("An error occured during downloading csv!")
+            return redirect(url_for('workspace'))
+        return send_file(path,mimetype="text/csv",attachment_filename='mygraph.csv',as_attachment=True)
+    
 
     @app.route('/result',methods=["GET","POST"])
     def result():

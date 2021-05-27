@@ -3,7 +3,7 @@ import pandas as pd
 import time
 from flask_wtf import FlaskForm
 from collections import OrderedDict
-from flask import Flask, request, redirect, url_for,render_template
+from flask import Flask, request, redirect, url_for,render_template,session
 from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, CustomJS
 from bokeh.io import curdoc
 from bokeh.resources import INLINE
@@ -270,6 +270,9 @@ def correlation_plot(df,selected_parameters):
 
     p.add_layout(color_bar, 'right')
 
+    path = "temp/" + str(session.get('user_id')) + "temp.csv"
+    data_corr.to_csv(path)
+
     script, div = components(p)
     return render_template(
     'graphs/correlation_plot.html',
@@ -278,7 +281,8 @@ def correlation_plot(df,selected_parameters):
     js_resources=INLINE.render_js(),
     css_resources=INLINE.render_css(),
     graphSelected = True,
-    columns = df.columns
+    columns = df.columns,
+    path = path
     ).encode(encoding='UTF-8')
 
 
@@ -339,7 +343,9 @@ def pie_plot(data,selected_parameter, sort_by_values = False):
     #p.axis.visible=False
     #p.grid.grid_line_color = None
     #p.outline_line_color = None
+    path = "temp/" + str(session.get('user_id')) + "temp.csv"
 
+    df_pie_agg.to_csv(path)
     script, div = components(p)
     return render_template(
     'graphs/pie_plot.html',
@@ -349,9 +355,9 @@ def pie_plot(data,selected_parameter, sort_by_values = False):
     css_resources=INLINE.render_css(),
     graphSelected = True,
     selected = selected_parameter,
-    columns = data.columns
+    columns = data.columns,
+    path = path
     ).encode(encoding='UTF-8')
-    return "sex"
 
 def dist_plot(df,parameter,bins = 20):
     
@@ -365,6 +371,9 @@ def dist_plot(df,parameter,bins = 20):
     p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], line_color='white', fill_color='black')
 
 
+    path = "temp/" + str(session.get('user_id')) + "temp.csv"
+    pd.DataFrame(np.c_[hist,edges[:-1]],columns = ["hist","edges"]).to_csv(path)
+
     script, div = components(p)
     return render_template(
     'graphs/dist_plot.html',
@@ -374,7 +383,8 @@ def dist_plot(df,parameter,bins = 20):
     css_resources=INLINE.render_css(),
     graphSelected = True,
     columns = df.columns,
-    selected = parameter
+    selected = parameter,
+    path=path
     ).encode(encoding='UTF-8')
 
 def nan_plot(df):
@@ -387,6 +397,7 @@ def bar_plot(data,selected_parameter, option = 'Vertical'):
     TOOLS = "box_select,lasso_select,pan,wheel_zoom,box_zoom,reset,help,save"
     result = create_feature_matrix(data,selected_parameter)
     df_pie_agg = pd.DataFrame(result,columns = ["Parameter","Count"])
+    print(df_pie_agg['Parameter'])
 
     if option == 'Vertical':
         p = figure(title='Vertical Bar Chart', x_range=df_pie_agg["Parameter"], 
@@ -409,6 +420,9 @@ def bar_plot(data,selected_parameter, option = 'Vertical'):
     p.xaxis.major_label_orientation = 1.57
     script, div = components(p)
 
+    path = "temp/" + str(session.get('user_id')) + "temp.csv"
+    df_pie_agg.to_csv(path)
+    
     return render_template(
     'graphs/bar_plot.html',
     plot_script=script,
@@ -417,7 +431,8 @@ def bar_plot(data,selected_parameter, option = 'Vertical'):
     css_resources=INLINE.render_css(),
     graphSelected = True,
     columns = data.columns,
-    selected = selected_parameter
+    selected = selected_parameter,
+    path=path
     ).encode(encoding='UTF-8')
     
 
