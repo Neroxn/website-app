@@ -1,19 +1,19 @@
 import numpy as np
 import pandas as pd
-import time
+import os
 from flask_wtf import FlaskForm
 from collections import OrderedDict
-from flask import Flask, request, redirect, url_for,render_template
-from bokeh.models import ColumnDataSource, Div, Select, Slider, TextInput, CustomJS
-from bokeh.io import curdoc
+from flask import Flask, request, redirect, url_for,render_template,session, flash
+from bokeh.models import ColumnDataSource
 from bokeh.resources import INLINE
 from bokeh.embed import components
-from bokeh.plotting import figure, output_file, show
+from bokeh.plotting import figure
 from bokeh.layouts import gridplot
-from bokeh.models.widgets import Button
+
 
 import bisect
 from math import pi
+import pickle
 from numpy import arange
 from itertools import chain
 from collections import OrderedDict
@@ -270,6 +270,9 @@ def correlation_plot(df,selected_parameters):
 
     p.add_layout(color_bar, 'right')
 
+    path = "temp/" + str(session.get('user_id')) + "-temp.csv"
+    data_corr.to_csv(path)
+
     script, div = components(p)
     return render_template(
     'graphs/correlation_plot.html',
@@ -278,7 +281,8 @@ def correlation_plot(df,selected_parameters):
     js_resources=INLINE.render_js(),
     css_resources=INLINE.render_css(),
     graphSelected = True,
-    columns = df.columns
+    columns = df.columns,
+    path = path
     ).encode(encoding='UTF-8')
 
 
@@ -339,7 +343,9 @@ def pie_plot(data,selected_parameter, sort_by_values = False):
     #p.axis.visible=False
     #p.grid.grid_line_color = None
     #p.outline_line_color = None
+    path = "temp/" + str(session.get('user_id')) + "-temp.csv"
 
+    df_pie_agg.to_csv(path)
     script, div = components(p)
     return render_template(
     'graphs/pie_plot.html',
@@ -349,9 +355,9 @@ def pie_plot(data,selected_parameter, sort_by_values = False):
     css_resources=INLINE.render_css(),
     graphSelected = True,
     selected = selected_parameter,
-    columns = data.columns
+    columns = data.columns,
+    path = path
     ).encode(encoding='UTF-8')
-    return "sex"
 
 def dist_plot(df,parameter,bins = 20):
     
@@ -365,6 +371,9 @@ def dist_plot(df,parameter,bins = 20):
     p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], line_color='white', fill_color='black')
 
 
+    path = "temp/" + str(session.get('user_id')) + "temp.csv"
+    pd.DataFrame(np.c_[hist,edges[:-1]],columns = ["hist","edges"]).to_csv(path)
+
     script, div = components(p)
     return render_template(
     'graphs/dist_plot.html',
@@ -374,7 +383,8 @@ def dist_plot(df,parameter,bins = 20):
     css_resources=INLINE.render_css(),
     graphSelected = True,
     columns = df.columns,
-    selected = parameter
+    selected = parameter,
+    path=path
     ).encode(encoding='UTF-8')
 
 def nan_plot(df):
@@ -387,6 +397,7 @@ def bar_plot(data,selected_parameter, option = 'Vertical'):
     TOOLS = "box_select,lasso_select,pan,wheel_zoom,box_zoom,reset,help,save"
     result = create_feature_matrix(data,selected_parameter)
     df_pie_agg = pd.DataFrame(result,columns = ["Parameter","Count"])
+    print(df_pie_agg['Parameter'])
 
     if option == 'Vertical':
         p = figure(title='Vertical Bar Chart', x_range=df_pie_agg["Parameter"], 
@@ -409,6 +420,9 @@ def bar_plot(data,selected_parameter, option = 'Vertical'):
     p.xaxis.major_label_orientation = 1.57
     script, div = components(p)
 
+    path = "temp/" + str(session.get('user_id')) + "-temp.csv"
+    df_pie_agg.to_csv(path)
+    
     return render_template(
     'graphs/bar_plot.html',
     plot_script=script,
@@ -417,7 +431,8 @@ def bar_plot(data,selected_parameter, option = 'Vertical'):
     css_resources=INLINE.render_css(),
     graphSelected = True,
     columns = data.columns,
-    selected = selected_parameter
+    selected = selected_parameter,
+    path=path
     ).encode(encoding='UTF-8')
     
 
@@ -645,16 +660,77 @@ def filter_data(data, actions):
         print(data.shape)
     return copy_data.loc[data.index]
 
-def clear_log(session,log):
-    """
-    Save the current log
-    Log will be in form of
-    <description> at <Timestamp>
-    """
-    if log not in session:
-        session["log"] = []
+def remove_temp_files(user_id):
+    if(user_id == None):
+        flash("An error occured while removing files.")
+    arr = os.listdir('temp')
+    user_files = []
+    for file in arr:
+        print(file.split("-"))
+        if file.split("-")[0] == str(user_id):
+            user_files += [file]
+    
+    print("User files : ",user_files)
+    for file in user_files:
+        path = "temp/" + file
+        os.remove(path)
 
-    else:
-        session["log"] = []
+def load_temp_dataframe(user_id, body = "-df-temp",method = "feather"):
+    """
+    Load temporary dataframe into temp folder for user. 
+    Everytime we need dataframe, reload it.
+    :user_id: -- is the id of the user 
+    :method: -- how to save , default valeus is feather as it does great job at saving/loading temporary files
+    """
+    if method == "feather":
+        extension = ".feather"
+    path = "temp/" + str(user_id) + body + extension
+    try:
+        data = pd.read_feather(path)
+    except:
+        save_temp_dataframe(pd.DataFrame(),user_id)
+        data = pd.read_feather(path)
+    data = data.set_index("index") if "index" in data.columns else data
+    return data
 
-    return session["log"]
+def save_temp_dataframe(data,user_id, body="-df-temp", method = "feather" ):
+    """
+    Save temporary dataframe into temp folder for user
+    Everytime we change dataframe, change it
+    :data: -- dataframe that is changed
+    :user_id: -- is the id of the user 
+    :method: -- how to save , default valeus is feather as it does great job at saving/loading temporary files
+    """
+    if method == "feather":
+        extension = ".feather"
+    path = "temp/" + str(user_id) + body + extension
+    data = data.reset_index()
+    data.to_feather(path)
+
+def calculate_model_no(user_id):
+    if(user_id == None):
+        flash("An error occured while load/saving model.")
+    arr = os.listdir('models')
+    user_models = []
+    for model in arr:
+        print(model.split("-"))
+        if model.split("-")[0] == str(user_id):
+            user_models += [model]
+    
+    print("User models : ",user_models)
+    return len(user_models)
+
+def save_user_model(user_id,model,body = "-model", method = "pickle"):
+    if method == "pickle":
+        model_no = calculate_model_no(user_id)
+        filename = "models/" + str(user_id) + body +  ".sav"
+        pickle.dump(model, open(filename, 'wb'))
+
+def load_user_model(user_id,body = "-model", method = "pickle"):
+    if method == "pickle":
+        model_no = calculate_model_no(user_id)
+        filename = "models/" + str(user_id) + body + ".sav"
+        return pickle.load(open(filename, 'rb'))
+
+def user_log_information(session):
+    return "[Workspace : {}, Selected Data : {}]".format(session.get("selected_workspace"),session.get("selected_dataframe"))
