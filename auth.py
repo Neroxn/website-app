@@ -1,6 +1,9 @@
+from os import remove
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from db import get_db
+from utils import *
+import pandas as pd
 
 bp = Blueprint('auth', __name__)
 
@@ -35,6 +38,9 @@ def register():
     
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
+    if session.get("user_id"): #if already login
+        return redirect(url_for("workspace"))
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -52,6 +58,7 @@ def login():
         if error is None:
             session.clear()
             session['user_id'] = user['id']
+            save_temp_dataframe(pd.DataFrame(),session.get("user_id")) #save empty dataframe after login
             return redirect(url_for('workspace'))
 
         flash(error)
@@ -76,5 +83,6 @@ def load_logged_in_user():
 @bp.route('/logout')
 def logout():
     print("Logoutted.")
+    remove_temp_files(session.get("user_id"))
     session.clear()
     return redirect(url_for('auth.login'))
