@@ -61,9 +61,12 @@
     <form method="post" >
 <input type="submit" name="Save DataFrame" value="Save DataFrame">
  </form>
+ <form method = "post">
+<input type="submit" name="Download DataFrame" value="Download DataFrame">
+ </form>
   <div class= "workspaces">
   {% for DataFrame in DataFrames %}
-  <a href= "{{ url_for('workspace', active_workspace =active_workspace, active_dataframe = DataFrame) }}">{{DataFrame}}</a>
+    <a href= "{{ url_for('workspace', active_workspace =active_workspace, active_dataframe = DataFrame) }}">{{DataFrame}}</a>
   {% endfor %}
 </div>
 </div>

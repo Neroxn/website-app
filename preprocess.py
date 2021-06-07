@@ -5,16 +5,11 @@ def stringDecoder(y, arrEncoder, selectedY):
     decodedY = []
     
     for i in range(len(selectedY)):
-        if(len(selectedY) > 1):
-            for column, encoder in arrEncoder:
-                if column == selectedY[i]:
-                    decodedY.append(encoder.inverse_transform(y[i]))
-        else:
-            for column, encoder in arrEncoder:
-                if column == selectedY[i]:
-                    decodedY = encoder.inverse_transform(y)
-    return decodedY
-
+        for column, encoder in arrEncoder:
+            decodedY.append(encoder.inverse_transform(y[i]))
+    df = pd.concat(decodedY, axis = 1)
+    return pd.DataFrame(df,columns = selectedY)
+    
 def stringEncoder(df, columns):
 	"""
 	Encodes the string values 0 to n-1

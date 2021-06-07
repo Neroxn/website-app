@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/result.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
+</head>
+
+<div class="navbar">
+  <a href="/">Load Dataset</a>
+  <div class="dropdown">
+    <button class="dropbtn">Visualize
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="{{ url_for('correlation_graph') }}">Correlation Matrix</a>
+      <a href="{{ url_for('scatter_graph') }} ">Scatter Matrix</a>
+      <a href="{{ url_for('pie_graph') }} ">Pie Graph</a>
+      <a href="{{ url_for('dist_graph') }} ">Histogram</a>
+      <a href="{{ url_for('bar_graph') }} ">Bar Graph</a>
+    </div>
+  </div>
+
+  <div class="dropdown">
+    <button class="dropbtn">Attributes
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="{{ url_for('select_variables') }}">Choose X</a>
+      <a href="{{ url_for('select_y') }} ">Choose Y</a>
+    </div>
+  </div>
+    <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
+    <a href="{{ url_for('result') }}">Result</a>
+    <a href="{{ url_for('auth.logout') }}" class = 'logout'>Logout</a>
+</div>
+
+<div class="metrics">
+  {% for i in range(mae|length) %}
+  <ul>{{ mae[i] }}</ul>
+  <ul>{{ mse[i] }}</ul>
+  <ul>{{ rmse[i] }}</ul>
+  <ul>{{ msle[i] }}</ul>
+  <ul>{{ mape[i] }}</ul>
+  {% endfor %}
+  </div>
+  
+  <div class="scrollmenu">
+    <table>
+        <tr>
+            {% for col in column_names %}
+            <th>{{col}}</th>
+            {% endfor %}
+        </tr>
+        {% for row in row_data %}
+        <tr>
+            {% for col, row_ in zip(column_names, row) %}
+            {% if col == link_column %}
+            <td>
+                <button type="submit" value={{ row_ }} name="person_id" form="patient_form" class="patient_button">
+                    {{ row_ }}
+                </button>
+            </td>
+            {% else %}
+            <td>{{row_}}</td>
+            {% endif %}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+  
+    </table>
+  </div>
+  
+  <div class='yazi'>
+    {% if isLoaded %}
+      <h2>Data with {{ rowS }} samples and {{ colS }} features is loaded successfully! </h2>
+    {% endif %}
+  </div>
+  
+  <div class = "container">
+    {% for message in get_flashed_messages() %}
+    <div class = "alert alert-warning">
+        <button type = "button" class = "close" data-dismiss = "alert">&times;</button>
+        {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  
+      <form method="post" >
+  <input type="submit" name="Upload test data" value="Upload test data">
+   </form>
+
+   
+</html>
