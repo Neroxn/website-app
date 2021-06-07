@@ -10,12 +10,10 @@ from preprocess import *
 from auth import *
 from db import *
 from workspace import *
+from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_squared_log_error 
 from sklearn.model_selection import train_test_split
 import datetime
 
-
-### These variables will be fixed later on as they are global and will cause errors. ###
-########################################################################################
 
 
 def create_app(test_config = None):
@@ -65,7 +63,7 @@ def create_app(test_config = None):
             if request.form.get('Add Workspace'):
                 return redirect(url_for("upload_file"))
 
-              
+
             #Delete Workspace button clicked, delete current workspace and redirect workspace page
             elif request.form.get('Delete Workspace'):
                 delete_workspace(session["user_id"], session["selected_workspace"])
@@ -100,6 +98,11 @@ def create_app(test_config = None):
             elif request.form.get('Clear Log'):
                 session['user_log'] = []
                 return redirect(url_for("workspace"))
+
+            elif request.form.get('Download DataFrame'):
+                path = str(session.get("user_id")) + "_" + str(session.get("selected_workspace")) + "_" + str(session.get("selected_dataframe")) + ".csv"
+                path = "temp/" + path 
+                return redirect(url_for("download_csv",path=path))
             #Render first screen
             return render_template("workspace.html",logs=session.get('user_log'))
             
@@ -171,6 +174,45 @@ def create_app(test_config = None):
                 save_temp_dataframe(df,session.get("user_id"))
                 create_workspace(session["user_id"], df)
                 
+
+                #Redirect to result page back if it comes from result page
+                if request.args.get("result"):
+                    model = load_user_model(session["user_id"])
+
+                    if session["selected_algo"] == "SVM":
+                        df2 = df[session["selected_x"]+session["selected_y"]]
+                        df2 = dropNanAndDuplicates(df2, 0.75)       
+                        actual = df2[session["selected_y"]]
+                        df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
+                        df2.values = session["scaler"].transform(df2.values)
+                        testX = df2[session["selected_x"]]
+                        result = model.predict(testX).reshape((len(testX),-1))
+                        result = session["scalerY"].inverse_transform(result)
+                        if encoderArr:
+                            result = stringDecoder(result, encoderArr, session["selected_y"])
+                    elif session["selected_algo"] == "RandomForest":
+                        df2 = df[session["selected_x"]+session["selected_y"]]
+                        df2 = dropNanAndDuplicates(df2, 0.75)
+                        actual = df2[session["selected_y"]]
+                        df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
+                        testX = df2[session["selected_x"]]
+                        result = model.predict(testX).reshape((len(testX),-1))
+                        if encoderArr:
+                            result = stringDecoder(result, encoderArr, session["selected_y"])
+                    elif session["selected_algo"] == "Adaboost":
+                        df2 = df[session["selected_x"]+session["selected_y"]]
+                        df2 = dropNanAndDuplicates(df2, 0.75)
+                        actual = df2[session["selected_y"]]
+                        df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
+                        testX = df2[session["selected_x"]]
+                        result = model.predict(testX).reshape((len(testX),-1))
+                        if encoderArr:
+                            result = stringDecoder(result, encoderArr, session["selected_y"])
+                            
+                    save_temp_dataframe(actual,session["user_id"],body="-actual-y")
+                    save_temp_dataframe(result,session["user_id"],body="-result-y")
+                    return redirect(url_for("result"))
+
                 description = str(datetime.datetime.now()) + " created new workspace. "
                 session["user_log"] += [description + user_log_information(session)] 
                 isLoaded = True
@@ -244,8 +286,8 @@ def create_app(test_config = None):
             session["selected_y"] = []
 
         if request.method == 'POST':
-            selectedAlgo = request.form['selector']
-            
+            print(request.form.get('selector'))
+            selectedAlgo = request.form['selector']            
             if selectedAlgo == 'SVM':
                 #Check whether kernel is valid
                 if not request.form['kernel'] in ['linear', 'rbf', 'poly','sigmoid']:
@@ -306,18 +348,30 @@ def create_app(test_config = None):
                 df2 = dropNanAndDuplicates(df2, 0.75)
                 df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
                 df2, scaler, scalerY = scale(df2, session["selected_y"])
+                
+                session["scaler"] = scaler
+                session["scalerY"] = scalerY
+
                 trainX, testX, trainY, testY = train_test_split(df2[session["selected_x"]], df2[session["selected_y"]], 
                                                                 test_size= 0.15, shuffle= True)
             
                 model = applySVM(trainX, trainY, kernel= kernel, c= float(C), gamma= gamma, degree= float(degree))
+                session["selected_model"] = "SVM"
                 save_user_model(session.get("user_id"),model)
-                #Train is done, predict time
+
+                
+                #Train is done, predict     
                 result = model.predict(testX).reshape((len(testX),-1))
                 result = scalerY.inverse_transform(result)
                 if encoderArr:
                     result = stringDecoder(result, encoderArr, session["selected_y"])
 
-                return redirect(url_for('results', actual= testY, prediction= result))
+                result = pd.DataFrame(result,columns=session["selected_y"])
+                result.set_index([testY.index],inplace=True)   
+
+                save_temp_dataframe(testY,session["user_id"],body="-actual-y")
+                save_temp_dataframe(result,session["user_id"],body="-result-y")
+                return redirect(url_for('result'))
                 
             elif selectedAlgo == 'RandomForest':
                 #Check whether number of estimator is valid
@@ -327,6 +381,8 @@ def create_app(test_config = None):
                         return redirect(url_for('selectAlgo'))
                     else:
                         numberEstimator = int(request.form['numberEstimator'])
+                        print("Estimator success")
+
                 except:
                     flash('Number of estimator must be an integer')
                     return redirect(url_for('selectAlgo'))
@@ -340,6 +396,8 @@ def create_app(test_config = None):
                         return redirect(url_for('selectAlgo'))
                     else:
                         maxDepth = int(request.form['maxDepth'])
+                        print("Depth success")
+
                 except:
                     flash('Max depth must be an integer or None')
                     return redirect(url_for('selectAlgo'))
@@ -351,6 +409,7 @@ def create_app(test_config = None):
                         return redirect(url_for('selectAlgo'))
                     else:
                         minSamplesLeaf = int(request.form['minSamplesLeaf'])
+                        print("Leaf success")
                 except:
                     try:
                         if float(request.form['minSamplesLeaf']) <= 0 :
@@ -369,13 +428,20 @@ def create_app(test_config = None):
                 trainX, testX, trainY, testY = train_test_split(df2[session["selected_x"]], df2[session["selected_y"]], 
                                                                 test_size= 0.15, shuffle= True)
                 model = applyRandomForest(trainX, trainY, numberEstimator= numberEstimator, maxDepth = maxDepth, minSamplesLeaf=minSamplesLeaf)
+                session["selected_model"] = "RandomForest"
                 save_user_model(session.get("user_id"),model)
                 #Train is done, predict time
                 result = model.predict(testX).reshape((len(testX),-1))
                 if encoderArr:
+                    print(result,encoderArr)
                     result = stringDecoder(result, encoderArr, session["selected_y"])
                     
-                return redirect(url_for('results', actual= testY, prediction= result))
+                result = pd.DataFrame(result,columns=session["selected_y"])
+                result.set_index([testY.index],inplace=True)   
+                
+                save_temp_dataframe(testY,session["user_id"],body="-actual-y")
+                save_temp_dataframe(result,session["user_id"],body="-result-y")
+                return redirect(url_for('result'))
                 
             elif selectedAlgo == 'Adaboost':
                 #Check whether number of estimator is valid
@@ -414,13 +480,21 @@ def create_app(test_config = None):
                 trainX, testX, trainY, testY = train_test_split(df2[session["selected_x"]], df2[session["selected_y"]], 
                                                                 test_size= 0.15, shuffle= True)
                 model = applyAdaBoost(trainX, trainY, numberEstimator= numberEstimator, learningRate= learningRate, loss=loss)
+                session["selected_model"] = "AdaBoost"
                 save_user_model(session.get("user_id"),model)
                 #Train is done, predict time
                 result = model.predict(testX).reshape((len(testX),-1))
                 if encoderArr:
                     result = stringDecoder(result, encoderArr, session["selected_y"])
-            
-                return redirect(url_for('results', actual= testY, prediction= result))
+
+
+                result = pd.DataFrame(result,columns=session["selected_y"])
+                result.set_index([testY.index],inplace=True)   
+
+
+                save_temp_dataframe(testY,session["user_id"],body="-actual-y")
+                save_temp_dataframe(result,session["user_id"],body="-result-y")
+                return redirect(url_for('result'))
             
         return render_template("select_algo.html")
 
@@ -629,72 +703,43 @@ def create_app(test_config = None):
 
     @app.route('/result',methods=["GET","POST"])
     def result():
-        return "SIKE"
-            
-    """        
-    @app.route('/getPlotCSV') # this is a job for GET, not POST
-    def plot_csv():
-        return send_file('outputs/Adjacency.csv',
-                        mimetype='text/csv',
-                        attachment_filename='Adjacency.csv',
-                        as_attachment=True)
-                        
-    @app.route("/results", methods = ["GET","POST"])
-    def results():
-        global session["model"],graph,session["selected_x"],session["selected_y"],selectedModel
-        if request.method == "GET": 
-            if session["model"] != None:
-                return_result_graph(session["model"],selectedModel) #This will return graph and upload file option
-            else:
-                return render_template("results.html", error = "Please train the session["model"] first!", modelExist = False)
-
-        elif request.method == "POST":
-            # check if the post request has the file part
-            print(request.files)
-            if 'file' not in request.files:
-                #flash('No file part')
-                return render_template("results.html",error = 'No file is submitted!')
-            file = request.files['file']
-
-            # check if user does not send any file
-            if file.filename == '':
-                #flash('No selected file')
-                return render_template("results.html",error = 'No file is selected!')
-
-            # a valid file is submitted. 
-            if file and allowed_file(file.filename):
-                # construct the file path
-                filename = secure_filename(file.filename)
-                file_path = UPLOAD_FOLDER + "\\" + file.filename
-                print(file_path)
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-                # get delimitter and qualifier form the form.
-                delimitter = request.form['delimitter']
-                qualifier = request.form['qualifier']
-                yExist = request.form["is-y-exist"]
-                if request.form.get('is-value-type'):
-                    assumption = True
-                else:
-                    assumption = False
-
-                # read the file
-                dataTypes, dataColumns, df = load_dataset(file_path,delimitter=delimitter,qualifier = qualifier, assumption=assumption)
-
-                ##################################
-                #Check if parameters are suitable#
-                ##################################
+        if request.method == "POST":
+            #Get test data
+            if request.form.get("Upload test data"):
+                return redirect(url_for("upload_file", result = True))
                 
-                if yExist:
-                    return proccess_and_show(session["model"] = session["model"], session["selected_x"] = session["selected_x"], session["selected_y"] = session["selected_y"], testX = df, selectedModel = selectedModel) 
-                else:
-                    return proccess_and_show(session["model"] = session["model"], session["selected_x"] = session["selected_x"], session["selected_y"] = [], testX = df, selectedModel = selectedModel) 
-
-            else:
-                return return_result_graph(session["model"],selectedModel)
-
-        return "To be continued"
-    """        
+        #Get actual and prediction Y
+        actual = load_temp_dataframe(session["user_id"],body="-actual-y")
+        pred = load_temp_dataframe(session["user_id"],body="-result-y")
+        
+        print(pred.head(5))
+        print(actual.head(5))
+        print(actual.shape,pred.shape)
+        #Check whether actual and pred are None
+        if actual is None or pred is None:
+            flash("Please select variables again")
+            return redirect(url_for("select_variables"))
+        
+        mae = []
+        mse = []
+        rmse = []
+        msle = []
+        mape = []
+        #Label columns as actual and prediction / calculate error metrics
+        for col in actual.columns:
+            mae.append("Mean absolute error of " + col + " is: "+ str(mean_absolute_error(actual[col], pred[col])))
+            mse.append("Mean square error of " + col + " is: "+ str(mean_squared_error(actual[col], pred[col])))
+            #msle.append("Mean squared logarithmic error of " + actual.columns[i] + " is: "+ str(mean_squared_log_error(actual[actual.columns[i]], pred[pred.columns[i]])))
+            
+        actual.columns = ["Actual "+ col for col in actual.columns]
+        pred.columns = ["Predicted "+ col for col in pred.columns]
+        
+        #Concat 2 df
+        df = pd.concat([actual, pred], axis = 1)
+        
+        
+        isLoaded = True
+        return render_template("result.html", column_names=df.columns.values, row_data=list(df.head(5).values.tolist()), link_column="Patient ID", zip=zip, isLoaded = isLoaded, rowS = df.shape[0], colS = df.shape[1], mae = mae, mse = mse, rmse = rmse, msle = msle, mape = mape)
 
     app.register_blueprint(bp, url_prefix='/auth')
     init_app(app)
