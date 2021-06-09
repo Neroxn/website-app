@@ -15,7 +15,6 @@ from sklearn.model_selection import train_test_split
 import datetime
 
 
-
 def create_app(test_config = None):
     UPLOAD_FOLDER = 'C:\\Users\\kargi\\Flask Practi e\\see\\datasets'
     ALLOWED_EXTENSIONS = set(['txt', 'csv'])
@@ -668,7 +667,7 @@ def create_app(test_config = None):
                 flash("Please select parameters!")
                 return redirect("create_column")
             
-            df = combine_columns(data = df, selected_columns = selected_parameters,
+            df,transformer = combine_columns(data = df, selected_columns = selected_parameters,
             new_column_name = new_column_name, mode = selected_mode, delete_column = delete_columns)
             save_temp_dataframe(df,session.get("user_id"))
             description = str(datetime.datetime.now()) + " New column is created."
@@ -744,5 +743,33 @@ def create_app(test_config = None):
     app.register_blueprint(bp, url_prefix='/auth')
     init_app(app)
     return app
+
+###########################
+# TO DO LIST : 
+# ✓> Columns should be checked before preprocessing
+
+# X> Way to handle with scalers-encoders - we should use same scalers and encoders in testing data.
+#   >> Note that dataframe can be a little bit different than test data since we can do transformations
+#   .. in this case, we can either apply same transformations or expect that test data columns were same.
+#   .. Lets assume that user did created new columns but did not apply transformations (encoders or scalers)
+#   .. So we have to apply transformations in reverse order.  
+#   .. For memorizing the mod operations, a new system can be created so that we would not need any assumptions 
+#   .. and we can apply it to the new-uploaded dataframe without asking but this will be handled later.
+
+# X> No scaling will be used in model training - this will further makes model more complex let user do it 
+#   >> This is done mostly - we only need a way to apply pipe of transformations as mentioned above
+
+# X> A seperete choice for every dtypes should exist. So selecting all objects-ints-floats could be better/faster
+#   >> This is important as we let user choose their feature for many things.
+
+# X> User can select x and y, but instead of using session to store this data, we can also change the currently used dataframe
+#   >> So that we can look selecting x and y as a way of "transforming" - dropping the unneeded columns.
+
+# X> Add error handler & result page. 
+
+# X> Further simplify the htmls by using a base html so that we can easily update every html at once.
+
+# X> Add Boostrap for better web design
+############################
 
 

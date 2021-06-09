@@ -59,13 +59,21 @@
     </div>  
       <input type="checkbox" onClick="toggle(this)" /> Toggle All<br/>
     </ul>
-    <h2>Choose operation and parameters to create a new column.</h2>
+    <h2>Choose operation and parameters to create a new column with existings one.</h2>
+    <h3>Basic Operations</h3>
     <input type="radio" name="selected_mode" value="sum" checked> Sum 
     <input type="radio" name="selected_mode" value="mean"> Mean 
     <input type="radio" name="selected_mode" value="difference"> Difference 
     <input type="radio" name="selected_mode" value="concat"> Concat Objects
+    <h3>NaN Value Handling</h3>
     <input type="radio" name="selected_mode" value="drop-nan-rows"> Drop NaN Rows
     <input type="radio" name="selected_mode" value="drop-nan-columns"> Drop NaN Columns
+    <h3>Column Preprocess</h3>
+    <input type="radio" name="selected_mode" value="min-max-scale"> Min-Max Scale
+    <input type="radio" name="selected_mode" value="standard-scale"> Standard Scale  
+    <input type="radio" name="selected_mode" value="object-encode"> Object Encoding
+    <input type="radio" name="selected_mode" value="onehot-encode"> Onehot Encoding
+    
     <p><input type="checkbox" name = "delete_columns" value ="1" checked> Delete used columns </p>
     <p><input type="text" name = "new_column_name" > New column name</p>
     <input type="submit" value="submit">
