@@ -1,64 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <script src="{{ url_for('static',filename='js/pca_transform.js') }}"></script>
+
+{% extends "base.html" %}
+{% block title %} {% endblock %}
+
+{% block head %}
   <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
   <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/pca_transform.css') }}">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    {% if graphSelected %}
-        {{ js_resources|indent(4)|safe }}
-        {{ css_resources|indent(4)|safe }}
-        {{ plot_script|indent(4)|safe }}
-    {% endif %}
-</head>
-<body>
-
-  <div class="navbar">
-    <a href="/">Load Dataset</a>
-    <div class="dropdown">
-      <button class="dropbtn">Visualize
-        <i class="fa fa-caret-down"></i>
-      </button>
-      <div class="dropdown-content">
-        <a href="{{ url_for('correlation_graph') }}">Correlation Matrix</a>
-        <a href="{{ url_for('scatter_graph') }} ">Scatter Matrix</a>
-        <a href="{{ url_for('pie_graph') }} ">Pie Graph</a>
-        <a href="{{ url_for('dist_graph') }} ">Histogram</a>
-        <a href="{{ url_for('bar_graph') }} ">Bar Graph</a>
-      </div>
-    </div>
-  
-    <div class="dropdown">
-      <button class="dropbtn">Attributes
-        <i class="fa fa-caret-down"></i>
-      </button>
-      <div class="dropdown-content">
-        <a href="{{ url_for('select_variables') }}">Choose X</a>
-        <a href="{{ url_for('select_y') }} ">Choose Y</a>
-        <a href="{{ url_for('pca_transform') }} ">PCA</a>
-        <a href="{{ url_for('create_column') }}">Column Transform</a>
-        <a href="{{ url_for('filter_transform') }} ">Filter</a>
-      </div>
-    </div>
-      <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
-      <a href="{{ url_for('auth.logout') }}" class = 'logout'>Logout</a>
-  </div>
+  {% if graphSelected %}
+    {{ js_resources|indent(4)|safe }}
+    {{ css_resources|indent(4)|safe }}
+    {{ plot_script|indent(4)|safe }}
+  {% endif %}
+{% endblock %}
 
 
+{% block page_content %}
 <h1 style = "color : gray;">Enter the parameters for PCA transformation.</h1>
 <form action="" method = "post" enctype="multipart/form-data">
     <p>Reduced dimension (number of components after transformation)  <input type="text" name="n_component"> </p>
     <p>Variance ratio (not required) <input type="text" name="variance_ratio"></p>
     <input type="submit" value="submit">
 </form>
-
-
-{% if error %}
-<p><h3 style = "color : gray;">{{ error }} </h3></p>
-{% endif %}
-
 
 {% if graphSelected %}
 <h1 style="text-align: center; margin-bottom: 40px;"> Cumilative Variance </h1>
@@ -67,16 +28,10 @@
 </div>
 {% endif %}
 
-<div class = "container">
-  {% for message in get_flashed_messages() %}
-  <div class = "alert alert-warning">
-      <button type = "button" class = "close" data-dismiss = "alert">&times;</button>
-      {{ message }}
-  </div>
-  {% endfor %}
-</div>
+{% endblock %}
 
-</body>
-</html>
+{% block scripts %}
+<script src="{{ url_for('static',filename='js/pca_transform.js') }}"></script>
+{% endblock %}
 
 

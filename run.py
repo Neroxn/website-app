@@ -655,11 +655,11 @@ def create_app(test_config = None):
                 delete_columns = False
             new_column_name = request.form.get("new_column_name")
             
-            if new_column_name in df.columns: # -- check if column name exist
+            if new_column_name in df.columns and new_column_name is not "" : # -- check if column name exist
                 flash("This column name is already exist!")
                 return redirect("create_column")
 
-            elif (new_column_name == None or new_column_name == "") and (selected_mode != "drop-nan-rows" and selected_mode != "drop-nan-columns"): # -- check if column name is not entered
+            elif (new_column_name == None or new_column_name == "") and (selected_mode in ["sum","mean","difference","concat"]): # -- check if column name is not entered
                 flash("Please enter a column name!")
                 return redirect("create_column")
 
@@ -740,6 +740,20 @@ def create_app(test_config = None):
         isLoaded = True
         return render_template("result.html", column_names=df.columns.values, row_data=list(df.head(5).values.tolist()), link_column="Patient ID", zip=zip, isLoaded = isLoaded, rowS = df.shape[0], colS = df.shape[1], mae = mae, mse = mse, rmse = rmse, msle = msle, mape = mape)
 
+    @app.errorhandler(403)
+    def forbidden(e):
+        return render_template('error/403.html'), 403
+
+
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template('error/404.html'), 404
+
+
+    @app.errorhandler(500)
+    def internal_server_error(e):
+        return render_template('error/500.html'), 500
+
     app.register_blueprint(bp, url_prefix='/auth')
     init_app(app)
     return app
@@ -748,7 +762,7 @@ def create_app(test_config = None):
 # TO DO LIST : 
 # ✓> Columns should be checked before preprocessing
 
-# X> Way to handle with scalers-encoders - we should use same scalers and encoders in testing data.
+# X> Way to handle with scalers-encoders - we should use same scalers and encoders in testing data. (5)
 #   >> Note that dataframe can be a little bit different than test data since we can do transformations
 #   .. in this case, we can either apply same transformations or expect that test data columns were same.
 #   .. Lets assume that user did created new columns but did not apply transformations (encoders or scalers)
@@ -756,16 +770,17 @@ def create_app(test_config = None):
 #   .. For memorizing the mod operations, a new system can be created so that we would not need any assumptions 
 #   .. and we can apply it to the new-uploaded dataframe without asking but this will be handled later.
 
-# X> No scaling will be used in model training - this will further makes model more complex let user do it 
+# X> Scaling will be used only when its needed -- for y, not for performence. (4)
 #   >> This is done mostly - we only need a way to apply pipe of transformations as mentioned above
 
-# X> A seperete choice for every dtypes should exist. So selecting all objects-ints-floats could be better/faster
-#   >> This is important as we let user choose their feature for many things.
+# X> A seperete choice for every dtypes should exist. So selecting all objects-ints-floats could be better/faster (3)
+#   >> This is important as we let user choose their feature for many things. 
 
-# X> User can select x and y, but instead of using session to store this data, we can also change the currently used dataframe
-#   >> So that we can look selecting x and y as a way of "transforming" - dropping the unneeded columns.
+# ✓> Add column drop option (1)
 
-# X> Add error handler & result page. 
+# ✓> Add error handler (2)
+# 
+# X> Add result page. (6)
 
 # X> Further simplify the htmls by using a base html so that we can easily update every html at once.
 

@@ -12,3 +12,10 @@
 body {
 	background:   rgba(112, 203, 255, 0.3);
 }
+
+div.selection-container { 
+	border:2px; 
+	width:500px; 
+	height: 500px; 
+	overflow-y: scroll;
+}
