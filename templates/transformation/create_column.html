@@ -1,56 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<script src="{{ url_for('static',filename='js/create_column.js') }}"></script>
-<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/create_column.css') }}">
-<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    {% if graphSelected %}
-        {{ js_resources|indent(4)|safe }}
-        {{ css_resources|indent(4)|safe }}
-        {{ plot_script|indent(4)|safe }}
-    {% endif %}
+{% extends "base.html" %}
+{% block title %} {% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/create_column.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
+{% endblock %}
 
 
-</head>
-<body>
-  <div class="navbar">
-    <a href="/">Load Dataset</a>
-    <div class="dropdown">
-      <button class="dropbtn">Visualize
-        <i class="fa fa-caret-down"></i>
-      </button>
-      <div class="dropdown-content">
-        <a href="{{ url_for('correlation_graph') }}">Correlation Matrix</a>
-        <a href="{{ url_for('scatter_graph') }} ">Scatter Matrix</a>
-        <a href="{{ url_for('pie_graph') }} ">Pie Graph</a>
-        <a href="{{ url_for('dist_graph') }} ">Histogram</a>
-        <a href="{{ url_for('bar_graph') }} ">Bar Graph</a>
-      </div>
-    </div>
-  
-    <div class="dropdown">
-      <button class="dropbtn">Attributes
-        <i class="fa fa-caret-down"></i>
-      </button>
-      <div class="dropdown-content">
-        <a href="{{ url_for('select_variables') }}">Choose X</a>
-        <a href="{{ url_for('select_y') }} ">Choose Y</a>
-        <a href="{{ url_for('pca_transform') }} ">PCA</a>
-        <a href="{{ url_for('create_column') }}">Column Transform</a>
-        <a href="{{ url_for('filter_transform') }} ">Filter</a>
-      </div>
-    </div>
-      <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
-      <a href="{{ url_for('auth.logout') }}" class = 'logout'>Logout</a>
-  </div>
-      
-
-<form action="" method = "post" enctype="multipart/form-data">
+{% block page_content %}
+  <form action="" method = "post" enctype="multipart/form-data">
     <h2> Select parameters for creating new colum : </h2>
-    <div class = "container">
+    <div class = "selection-container">
     <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
     <ul id="myUL">
         {% for col in columns %}
@@ -61,41 +21,38 @@
     </ul>
     <h2>Choose operation and parameters to create a new column with existings one.</h2>
     <h3>Basic Operations</h3>
+    Create new columns by using following operation:
     <input type="radio" name="selected_mode" value="sum" checked> Sum 
     <input type="radio" name="selected_mode" value="mean"> Mean 
     <input type="radio" name="selected_mode" value="difference"> Difference 
     <input type="radio" name="selected_mode" value="concat"> Concat Objects
-    <h3>NaN Value Handling</h3>
-    <input type="radio" name="selected_mode" value="drop-nan-rows"> Drop NaN Rows
-    <input type="radio" name="selected_mode" value="drop-nan-columns"> Drop NaN Columns
+    <p><input type="text" name = "new_column_name" > New column name</p>
+    <p><input type="checkbox" name = "delete_columns" value ="1" checked> Delete selected columns </p>
+
+    <h3>Column Handling</h3>
+    <p><input type="radio" name="selected_mode" value="drop-columns"> Drop Columns</p>
+    <p><input type="radio" name="selected_mode" value="drop-nan-rows"> Drop NaN Rows</p>
+    <p><input type="radio" name="selected_mode" value="drop-nan-columns"> Drop NaN Columns</p>
+
+    <h3>Impute Columns</h3>
+    Replace the columns with following operation:
+    <input type="radio" name="selected_mode" value="impute-columns-median"> Median
+    <input type="radio" name="selected_mode" value="impute-columns-mean"> Mean
+    <input type="radio" name="selected_mode" value="impute-columns-mfq"> Most Frequent
+
     <h3>Column Preprocess</h3>
     <input type="radio" name="selected_mode" value="min-max-scale"> Min-Max Scale
     <input type="radio" name="selected_mode" value="standard-scale"> Standard Scale  
     <input type="radio" name="selected_mode" value="object-encode"> Object Encoding
     <input type="radio" name="selected_mode" value="onehot-encode"> Onehot Encoding
     
-    <p><input type="checkbox" name = "delete_columns" value ="1" checked> Delete used columns </p>
-    <p><input type="text" name = "new_column_name" > New column name</p>
     <input type="submit" value="submit">
 </form>
 
+{% endblock %}
 
-{% if error %}
-<p><h3 style = "color : gray;">{{ error }} </h3></p>
-{% endif %}
-
-<div class = "container">
-  {% for message in get_flashed_messages() %}
-  <div class = "alert alert-warning">
-      <button type = "button" class = "close" data-dismiss = "alert">&times;</button>
-      {{ message }}
-  </div>
-  {% endfor %}
-</div>
-
-</body>
-
-
-</html>
+{% block scripts %}
+<script src="{{ url_for('static',filename='js/create_column.js') }}"></script>
+{% endblock %}
 
 

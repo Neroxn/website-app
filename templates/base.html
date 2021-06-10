@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+{% block title %} {% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block navbar %}
+<div class="navbar navbar-inverse" role="navigation">
+    <div class="navbar">
+        <a href="/">Load Dataset</a>
+        <div class="dropdown">
+          <button class="dropbtn">Visualize
+            <i class="fa fa-caret-down"></i>
+          </button>
+          <div class="dropdown-content">
+            <a href="{{ url_for('correlation_graph') }}">Correlation Matrix</a>
+            <a href="{{ url_for('scatter_graph') }} ">Scatter Matrix</a>
+            <a href="{{ url_for('pie_graph') }} ">Pie Graph</a>
+            <a href="{{ url_for('dist_graph') }} ">Histogram</a>
+            <a href="{{ url_for('bar_graph') }} ">Bar Graph</a>
+          </div>
+        </div>
+      
+        <div class="dropdown">
+          <button class="dropbtn">Attributes
+            <i class="fa fa-caret-down"></i>
+          </button>
+          <div class="dropdown-content">
+            <a href="{{ url_for('select_variables') }}">Choose X</a>
+            <a href="{{ url_for('select_y') }} ">Choose Y</a>
+            <a href="{{ url_for('pca_transform') }} ">PCA</a>
+            <a href="{{ url_for('create_column') }}">Column Transform</a>
+            <a href="{{ url_for('filter_transform') }} ">Filter</a>
+          </div>
+        </div>
+          <a href="{{ url_for('selectAlgo') }}">Algorithms</a>
+          <a href="{{ url_for('auth.logout') }}" class = 'logout'>Logout</a>
+      </div>    
+</div>
+{% endblock %}
+
+{% block content %}
+
+    {% block page_content %}{% endblock %}
+
+    <div class="container">
+        {% for message in get_flashed_messages() %}
+        <div class="alert alert-warning">
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+
+{% endblock %}
+</html>

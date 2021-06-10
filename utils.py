@@ -13,6 +13,8 @@ from bokeh.layouts import column, gridplot
 
 
 from sklearn.preprocessing import OneHotEncoder,LabelEncoder,MinMaxScaler,StandardScaler
+from sklearn.impute import SimpleImputer
+
 from math import pi
 import pickle
 from numpy import arange
@@ -606,6 +608,9 @@ def combine_columns(data, selected_columns, new_column_name, mode, delete_column
         for col in encoded_df.columns:
             data[col] = encoded_df[col]
         return data,encoder
+
+    elif mode == "drop-columns":
+        data.drop(selected_columns,axis=1,inplace=True), 
         
     elif mode == "standard-scale":
         #Check if columns are numeric
@@ -615,7 +620,29 @@ def combine_columns(data, selected_columns, new_column_name, mode, delete_column
         data[selected_columns] = scaled_df
         return data,scaler
 
-    if delete_column and mode != "drop-nan-rows" and mode != "drop-nan-columns":
+    elif mode == "impute-columns-median":
+        imputer = SimpleImputer(strategy = "mean")
+        selected_df = selected_df.select_dtypes(include = ["number"])
+        selected_columns = selected_df.columns
+        imputed_df = imputer.fit_transform(selected_df)
+        data[selected_columns] = imputed_df
+
+
+    elif mode == "impute-columns-mean":
+        imputer = SimpleImputer(strategy = "median")
+        selected_df = selected_df.select_dtypes(include = ["number"])
+        selected_columns = selected_df.columns
+        imputed_df = imputer.fit_transform(selected_df)
+        data[selected_columns] = imputed_df
+
+    
+    elif mode == "impute-columns-mfq":
+        imputer = SimpleImputer(strategy = "most_frequent")
+        imputed_df = imputer.fit_transform(selected_df)
+        data[selected_columns] = imputed_df
+
+
+    if delete_column and mode in ["sum","mean","difference","concat"]:
         return data.drop(selected_columns,axis = 1),None
     
     return data,None

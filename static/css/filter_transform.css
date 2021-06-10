@@ -25,9 +25,8 @@ label:hover {
  cursor:pointer;
 }
 
-.container { 
+div.selection-container { 
 	border:2px; 
-	solid #ccc; 
 	width:500px; 
 	height: 500px; 
 	overflow-y: scroll;
