@@ -9,19 +9,24 @@
 {% block title %} {% endblock %}
 
 {% block head %}
+{{ super() }}
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/register.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
 {% endblock %}
 
 
 {% block page_content %}
-<form method="post">
-  <label for="username">Username</label>
-  <input name="username" id="username" required>
-  <label for="password">Password</label>
-  <input type="password" name="password" id="password" required>
-  <input type="submit" value="Register">
-</form>
+<div class="container">
+	<div class="form-group">
+		<form method="post">
+			<label for="username">Username:</label>
+			<input type ="username" class="form-control" name="username" id="username" placeholder= "Enter username" required>
+			<label for="password">Password:</label>
+			<input type="password" class="form-control" name="password" placeholder="Enter password" id="password" required>
+			<input type="submit" class="btn btn-primary active" value="Register">
+		</form>
+	</div>
+</div>
 
 {% endblock %}
 

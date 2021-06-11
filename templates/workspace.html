@@ -3,44 +3,40 @@
 {% block title %} {% endblock %}
 
 {% block head %}
+{{ super() }}
 <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='css/workspace.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
 {% endblock %}
 
 
 {% block page_content %}
-<div>
-  <h1>Active Workspaces</h1>
-  <form method="post" >
-<input type="submit" name="Add Workspace" value="Add Workspace">
- </form>
-  <div class = 'workspaces'>
-  {% if workspaces is not none %}
-    {% for workspace in workspaces %}
-    <a href= "{{ url_for('workspace', active_workspace = workspace ) }}">{{ workspace }}</a>
-    {% endfor %}
-  {% endif %}
-</div>
+<div class= ".container-fluid">
+  <h1>Active Workspaces<span class="badge badge-primary"><form method="post"><input type="submit" class="btn btn-primary" name="Add Workspace" value="Add Workspace"></form></span></h1>
+  <div class="btn-group ">
+    {% if workspaces is not none %}
+      {% for workspace in workspaces %}
+        <a class="btn btn-info" href= "{{ url_for('workspace', active_workspace = workspace ) }}">{{ workspace }}</a>
+      {% endfor %}
+    {% endif %}
+  </div>
 </div>
 
 {% if DataFrames is not none %}
-<div> 
+<div class= ".container-fluid"> 
   <h1>Workspace: {{ active_workspace }}</h1>
-    <form method="post" >
-<input type="submit" name="Delete Workspace" value="Delete Workspace">
- </form>
+  	<form method="post" >
+		<input type="submit"  class="btn btn-primary" name="Delete Workspace" value="Delete Workspace">
+	</form>
   <h2>Active DataFrames</h2>
-    <form method="post" >
-<input type="submit" name="Save DataFrame" value="Save DataFrame">
- </form>
- <form method = "post">
-<input type="submit" name="Download DataFrame" value="Download DataFrame">
- </form>
-  <div class= "workspaces">
-  {% for DataFrame in DataFrames %}
-    <a href= "{{ url_for('workspace', active_workspace =active_workspace, active_dataframe = DataFrame) }}">{{DataFrame}}</a>
-  {% endfor %}
-</div>
+  <form method="post">
+	<input type="submit" class="btn btn-primary" name="Save DataFrame" value="Save DataFrame">
+    <input type="submit" class="btn btn-primary" name="Download DataFrame" value="Download DataFrame">
+  </form>
+  <div class= "btn-group">
+    {% for DataFrame in DataFrames %}
+      	<a class="btn btn-info" href= "{{ url_for('workspace', active_workspace =active_workspace, active_dataframe = DataFrame) }}">{{DataFrame}}</a>
+    {% endfor %}
+  </div>
 </div>
 {% endif %}
 
@@ -73,9 +69,9 @@
 <div class='yazi'>
   {% if isLoaded %}
      <form method="post" >
-     <input type="submit" name="Select DataFrame" value="Select as current DataFrame">
-<input type="submit" name="Delete DataFrame" value="Delete DataFrame">
- </form>
+      <input type="submit" class="btn btn-primary" name="Select DataFrame" value="Select as current DataFrame">
+      <input type="submit" class="btn btn-primary" name="Delete DataFrame" value="Delete DataFrame">
+      </form>
   {% endif %}
 
   {% for error in errors %}
@@ -93,9 +89,23 @@
   {% endfor %}
 </div>
 <form method="post" >
-  <input type="submit" name="Clear Log" value="Clear Log">
+  <input type="submit" class="btn btn-primary" name="Clear Log" value="Clear Log">
    </form>
 </html>
+    
+{% endblock %}
+
+
+    <div class=".container-fluid pt-2">
+        {% for message in get_flashed_messages() %}
+        <div class="alert alert-warning">
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+
+
 
 {% endblock %}
 
