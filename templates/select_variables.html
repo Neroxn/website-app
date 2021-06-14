@@ -3,36 +3,39 @@
 {% block title %} {% endblock %}
 
 {% block head %}
+{{ super() }}
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/select_variables.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
 {% endblock %}
 
 
 {% block page_content %}
-<h1>Select variables that will be used in training </h1>
-<form method="post">
-  <button type='button' class="btn btn-primary" onClick='toggle(this)'>Toggle All</button>
-  <table class="table table-borderless">
-    <thead>
-      <tr>
-      {% for type in types %}
-        <td> {{ type }} </td>
-      {% endfor %}
-      </tr>
-    </thead>
-    <tbody>
-    {% for column in columns %}
-      <tr>
-        {% for elem in column %}
-          <td><input type="checkbox" name="hello" value= {{ elem }} checked> {{ elem }}</td>
+<div class="container">
+  <h1>Select variables that will be used in training </h1>
+  <form method="post">
+    <button type='button' class="btn btn-primary" onClick='toggle(this)'>Toggle All</button>
+    <input class="form-control" id="myInput" type="text" placeholder="Search..">
+    <table class="table table-borderless">
+      <thead>
+        <tr>
+        {% for type in types %}
+          <th> {{ type }} </td>
         {% endfor %}
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  <input type="submit" class="btn btn-primary">
-</form>
-
+        </tr>
+      </thead>
+      <tbody id="myTable">
+      {% for column in columns %}
+        <tr>
+          {% for elem in column %}
+           <td><input type="checkbox" name="hello" value= {{ elem }} checked> {{ elem }}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <input type="submit" class="btn btn-primary">
+  </form>
+</div>
 {% endblock %}
 
 {% block scripts %}
