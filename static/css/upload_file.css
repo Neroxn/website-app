@@ -1,18 +1,4 @@
-.yazi{
-	text-align: center;
-	padding-top: 50px;
-  padding-bottom: 50px;
-}
 
-.choose-file {
-	width: 180px;
-	height: 50px;
-}
-
-.upload{
-	width: 90px;
-	height: 40px;
-}
 
 body {
 	background:   rgba(112, 203, 255, 0.3);

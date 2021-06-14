@@ -11,13 +11,16 @@
 {% block page_content %}
 <h1>Select variables that will be used in training </h1>
 <form method="post">
-  <!--> <button type='button' onClick='toggle(this)'>Toggle All</button><!-->
-  <table>
-    <tr>
-    {% for type in types %}
-    <td> {{ type }} </td>
-    {% endfor %}
-    </tr>
+  <button type='button' class="btn btn-primary" onClick='toggle(this)'>Toggle All</button>
+  <table class="table table-borderless">
+    <thead>
+      <tr>
+      {% for type in types %}
+        <td> {{ type }} </td>
+      {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
     {% for column in columns %}
       <tr>
         {% for elem in column %}
@@ -25,8 +28,9 @@
         {% endfor %}
       </tr>
     {% endfor %}
+    </tbody>
   </table>
-  <input type="submit" class='sumbit'>
+  <input type="submit" class="btn btn-primary">
 </form>
 
 {% endblock %}
