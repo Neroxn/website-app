@@ -274,8 +274,7 @@ def create_app(test_config = None):
             cols = []
         return render_template("select_variables.html",types = dtypes, columns = cols)
 
-
-    @app.route("/selectAlgo", methods = ["GET","POST"])
+    @app.route("/selectAlgo",methods = ["GET","POST"])
     def selectAlgo():
         df = load_temp_dataframe(session.get("user_id"))
         if not session.get("selected_x"):
@@ -284,218 +283,82 @@ def create_app(test_config = None):
         if not session.get("selected_y"):
             session["selected_y"] = []
 
-        if request.method == 'POST':
-            print(request.form.get('selector'))
-            selectedAlgo = request.form['selector']            
-            if selectedAlgo == 'SVM':
-                #Check whether kernel is valid
-                if not request.form['kernel'] in ['linear', 'rbf', 'poly','sigmoid']:
-                    flash('Invalid kernel, kernel must be one of them: linear, rbf, poly, sigmoid')
-                    return redirect(url_for('selectAlgo'))
-                else:
-                    kernel = request.form['kernel']
-                
-                #Check whether C is valid
-                try:
-                    if float(request.form['C']) <= 0 :
-                        flash('C must be positive real number')
-                        return redirect(url_for('selectAlgo'))
-                    else:
-                        C = request.form['C']
-                except:
-                    flash('C must be a float number')
-                    return redirect(url_for('selectAlgo'))
-                
-                #Check whether gamma is valid
-                if(kernel == 'linear'):
-                    gamma = 'scale'
-                else:
-                    try:
-                        if request.form['gamma'] == 'scale':
-                            gamma = 'scale'
-                        elif request.form['gamma'] == 'auto':
-                            gamma = 'auto'
-                        elif float(request.form['gamma']) == 0:
-                            flash('Gamma must be different from 0')
-                            return redirect(url_for('selectAlgo'))
-                        else:
-                            gamma = float(request.form['gamma'])
-                    except:
-                        flash('Gamma must be auto, scale, or a float number')
-                        return redirect(url_for('selectAlgo'))
-            
-                #Check whether degree is valid
-                if(kernel != 'poly' and request.form['degree'] != ''):
-                    flash('Poly must be defined if kernel is polynomial')
-                    return render_template("select_algo.html")
-                if(kernel == 'poly'):
-                    try:
-                        if int(request.form['degree']) <= 0:
-                            flash('Degree must be positive integer')
-                            return redirect(url_for('selectAlgo'))
-                        else:
-                            degree = int(request.form['degree'])
-                    
-                    except:
-                        flash('Degree must be a positive integer')
-                        return redirect(url_for('selectAlgo'))
-                else:
-                    degree = 3
-                
-                #Parameters are valid, train time
-                df2 = df[session["selected_x"]+session["selected_y"]]
-                df2 = dropNanAndDuplicates(df2, 0.75)
-                df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
-                df2, scaler, scalerY = scale(df2, session["selected_y"])
-                
-                session["scaler"] = scaler
-                session["scalerY"] = scalerY
+        no_of_integer,no_of_inexact,no_of_object,other_columns = instance_divider(df[session.get("selected_y")])
+        if other_columns != 0:
+            flash("A variable y with no possible model selection has found!")
+            return redirect(url_for("select_y"))
+        else:
+            if no_of_integer != 0: 
+                if no_of_inexact == 0  and no_of_object != 0: #All columns are integer or object, use classification
+                    classification_model = True
+                    regression_model = False
 
-                trainX, testX, trainY, testY = train_test_split(df2[session["selected_x"]], df2[session["selected_y"]], 
-                                                                test_size= 0.15, shuffle= True)
-            
-                model = applySVM(trainX, trainY, kernel= kernel, c= float(C), gamma= gamma, degree= float(degree))
-                session["selected_model"] = "SVM"
-                save_user_model(session.get("user_id"),model)
-
+                elif no_of_object == 0: # All columns are integer or float, use regression
+                    regression_model = True 
+                    classification_model = False
                 
-                #Train is done, predict     
-                result = model.predict(testX).reshape((len(testX),-1))
-                result = scalerY.inverse_transform(result)
-                if encoderArr:
-                    result = stringDecoder(result, encoderArr, session["selected_y"])
+                elif no_of_inexact != 0 and no_of_object != 0: #Columns are mixed, show error
+                    flash("No possible model can be selected! Please use different target variables for prediction")
 
-                result = pd.DataFrame(result,columns=session["selected_y"])
-                result.set_index([testY.index],inplace=True)   
+                else: #All columns are integer. Both of regression and classification can be used
+                    regression_model = True
+                    classification_model = True
+            else: 
+                if no_of_inexact == 0  and no_of_object != 0: #All columns are object, use classification
+                    classification_model = True
+                    regression_model = False
 
-                save_temp_dataframe(testY,session["user_id"],body="-actual-y")
-                save_temp_dataframe(result,session["user_id"],body="-result-y")
-                return redirect(url_for('result'))
-                
-            elif selectedAlgo == 'RandomForest':
-                #Check whether number of estimator is valid
-                try:
-                    if int(request.form['numberEstimator']) <= 0 :
-                        flash('Number of estimator must be a positive integer')
-                        return redirect(url_for('selectAlgo'))
-                    else:
-                        numberEstimator = int(request.form['numberEstimator'])
-                        print("Estimator success")
+                elif no_of_object == 0: # All columns are flaot, use regression
+                    regression_model = True 
+                    classification_model = False
 
-                except:
-                    flash('Number of estimator must be an integer')
-                    return redirect(url_for('selectAlgo'))
-                    
-                #Check whether maxDepth is valid
-                try:
-                    if request.form['maxDepth'] == 'None':
-                        maxDepth = 'None'
-                    elif int(request.form['maxDepth']) <= 0 :
-                        flash('Max depth must be a positive integer')
-                        return redirect(url_for('selectAlgo'))
-                    else:
-                        maxDepth = int(request.form['maxDepth'])
-                        print("Depth success")
+      
+        if request.method == "POST":
+            # get the df_X and df_y
+            df_X = df[session.get("selected_x")]
+            df_y = df[session.get("selected_y")]
 
-                except:
-                    flash('Max depth must be an integer or None')
-                    return redirect(url_for('selectAlgo'))
-                
-                #Check whether minimum samples leaf is valid
-                try:
-                    if int(request.form['minSamplesLeaf']) <= 0 :
-                        flash('Minimum samples leaf must be a positive integer or float')
-                        return redirect(url_for('selectAlgo'))
-                    else:
-                        minSamplesLeaf = int(request.form['minSamplesLeaf'])
-                        print("Leaf success")
-                except:
-                    try:
-                        if float(request.form['minSamplesLeaf']) <= 0 :
-                            flash('Minimum samples leaf must be a positive integer or float')
-                            return redirect(url_for('selectAlgo'))
-                        else:
-                            minSamplesLeaf = float(request.form['minSamplesLeaf'])
-                    except:
-                        flash('Minimum samples leaf must be an integer or float')
-                        return redirect(url_for('selectAlgo'))
-                            
-                #Parameters are valid, train time
-                df2 = df[session["selected_x"]+session["selected_y"]]
-                df2 = dropNanAndDuplicates(df2, 0.75)
-                df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
-                trainX, testX, trainY, testY = train_test_split(df2[session["selected_x"]], df2[session["selected_y"]], 
-                                                                test_size= 0.15, shuffle= True)
-                model = applyRandomForest(trainX, trainY, numberEstimator= numberEstimator, maxDepth = maxDepth, minSamplesLeaf=minSamplesLeaf)
-                session["selected_model"] = "RandomForest"
-                save_user_model(session.get("user_id"),model)
-                #Train is done, predict time
-                result = model.predict(testX).reshape((len(testX),-1))
-                if encoderArr:
-                    print(result,encoderArr)
-                    result = stringDecoder(result, encoderArr, session["selected_y"])
-                    
-                result = pd.DataFrame(result,columns=session["selected_y"])
-                result.set_index([testY.index],inplace=True)   
-                
-                save_temp_dataframe(testY,session["user_id"],body="-actual-y")
-                save_temp_dataframe(result,session["user_id"],body="-result-y")
-                return redirect(url_for('result'))
-                
-            elif selectedAlgo == 'Adaboost':
-                #Check whether number of estimator is valid
-                try:
-                    if int(request.form['numberEstimator']) <= 0 :
-                        flash('Number of estimator must be a positive integer')
-                        return redirect(url_for('selectAlgo'))
-                    else:
-                        numberEstimator = int(request.form['numberEstimator'])
-                except:
-                    flash('Number of estimator must be an integer')
-                    return redirect(url_for('selectAlgo'))
-                
-                #Check whether learning rate is valid
-                try:
-                    if float(request.form['learningRate']) <= 0 :
-                        flash('Learning rate must be a positive float')
-                        return redirect(url_for('selectAlgo'))
-                    else:
-                        learningRate = float(request.form['learningRate'])
-                except:
-                    flash('Number of estimator must be an float')
-                    return redirect(url_for('selectAlgo'))
-                
-                #Check whether loss is valid
-                if not request.form['loss'] in ['linear', 'square', 'exponential']:
-                    flash('Invalid loss, loss must be one of them: linear, square, exponential')
-                    return redirect(url_for('selectAlgo'))
-                else:
-                    loss = request.form['loss']
-                
-                #Parameters are valid, train time
-                df2 = df[session["selected_x"]+session["selected_y"]]
-                df2 = dropNanAndDuplicates(df2, 0.75)
-                df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
-                trainX, testX, trainY, testY = train_test_split(df2[session["selected_x"]], df2[session["selected_y"]], 
-                                                                test_size= 0.15, shuffle= True)
-                model = applyAdaBoost(trainX, trainY, numberEstimator= numberEstimator, learningRate= learningRate, loss=loss)
-                session["selected_model"] = "AdaBoost"
-                save_user_model(session.get("user_id"),model)
-                #Train is done, predict time
-                result = model.predict(testX).reshape((len(testX),-1))
-                if encoderArr:
-                    result = stringDecoder(result, encoderArr, session["selected_y"])
+            selected_model = request.form.get("selected_model")
 
+            ##PART 1##
+            print(selected_model,"Selected-model successfull")
+            selected_parameters = request.form
+            print(selected_parameters)
+            df_X,df_y = preprocess_for_model(selected_model,df_X,df_y) # apply preprocess that is needed
+            print("Preprocess-model successfull")
+            ##PART 2##
+            model = fetch_model(selected_model,selected_parameters) # create model with given parameters
+            print("Fetch-model successfull")
 
-                result = pd.DataFrame(result,columns=session["selected_y"])
-                result.set_index([testY.index],inplace=True)   
+            ##PART 3##
+            train_X, test_X, train_y, test_y = train_test_split(df_X,df_y,train_size = 0.80) # split the dataframe
+            model = train_model(model,train_X,train_y) # train the model 
+            print("Train-model successfull")
 
+            ##PART 4##
+            predicted_y = test_model(model,test_X) # predict the test_x
+            print("Test-model successfull")
 
-                save_temp_dataframe(testY,session["user_id"],body="-actual-y")
-                save_temp_dataframe(result,session["user_id"],body="-result-y")
-                return redirect(url_for('result'))
-            
-        return render_template("select_algo.html")
+            ##PART 5##
+            # prepare result dataframe to show our performance
+            test_y.columns  = [col + "_actual" for col in test_y.columns]
+        
+            predicted_y = pd.DataFrame(predicted_y,columns = train_y.columns)
+            predicted_y.columns = [col + "_predicted" for col in test_y.columns]
+            predicted_y.set_index([test_y.index],inplace=True)   
+            result_dataframe = pd.concat([test_y,predicted_y],axis=1)
+            print(predicted_y.head())
+            print(test_y.head())
+            print(result_dataframe.head())
+            # save model and dataframe
+            save_user_model(model,session.get("user_id"),body = "test-model")
+
+            save_temp_dataframe(result_dataframe,session.get("user_id"), body = "-result-dataframe")
+            return "Succesfull"
+
+        return render_template("select_algo.html",regression_model = regression_model, 
+        classification_model = classification_model,more_than_one = len(session.get('selected_y')) > 1)
+
 
         
     @app.route('/scatter_graph', methods = ["GET","POST"])
@@ -760,7 +623,6 @@ def create_app(test_config = None):
 
 ###########################
 # TO DO LIST : 
-# ✓> Columns should be checked before preprocessing
 
 # X> Way to handle with scalers-encoders - we should use same scalers and encoders in testing data. (5)
 #   >> Note that dataframe can be a little bit different than test data since we can do transformations
@@ -776,13 +638,10 @@ def create_app(test_config = None):
 # X> A seperete choice for every dtypes should exist. So selecting all objects-ints-floats could be better/faster (3)
 #   >> This is important as we let user choose their feature for many things. 
 
-# ✓> Add column drop option (1)
-
-# ✓> Add error handler (2)
 # 
 # X> Add result page. (6)
 
-# X> Further simplify the htmls by using a base html so that we can easily update every html at once.
+
 
 # X> Add Boostrap for better web design
 ############################

@@ -765,7 +765,9 @@ def save_temp_dataframe(data,user_id, body="-df-temp", method = "feather" ):
     if method == "feather":
         extension = ".feather"
     path = "temp/" + str(user_id) + body + extension
+    print(data.head())
     data = data.reset_index()
+    print(data.head())
     data.to_feather(path)
 
 def calculate_model_no(user_id):
@@ -781,15 +783,15 @@ def calculate_model_no(user_id):
     print("User models : ",user_models)
     return len(user_models)
 
-def save_user_model(user_id,model,body = "-model", method = "pickle"):
+def save_user_model(model,user_id,body = "-model", method = "pickle"):
     if method == "pickle":
-        model_no = calculate_model_no(user_id)
+        #model_no = calculate_model_no(user_id)
         filename = "models/" + str(user_id) + body +  ".sav"
         pickle.dump(model, open(filename, 'wb'))
 
 def load_user_model(user_id,body = "-model", method = "pickle"):
     if method == "pickle":
-        model_no = calculate_model_no(user_id)
+        #model_no = calculate_model_no(user_id)
         filename = "models/" + str(user_id) + body + ".sav"
         return pickle.load(open(filename, 'rb'))
 
@@ -802,13 +804,15 @@ def min_max_scale(df,object_prefix = None):
     :df: -- is the dataframe with values that will be scaled
     :object_prefix: -- if provided, add prefix to every column name
     """
+    if df.empty:
+        return df,None
     scaler = MinMaxScaler()
     original_columns = df.columns
     try:
         df = scaler.fit_transform(df)
     except:
         flash("An error has occured!")
-        return None
+        return df,None
 
     if object_prefix is not None:
         original_columns = [object_prefix + col for col in original_columns]
@@ -817,16 +821,23 @@ def min_max_scale(df,object_prefix = None):
 
 def standard_scale(df,object_prefix = None):
     """
+    Inputs:
     :df: -- is the dataframe with values that will be scaled
     :object_prefix: -- if provided, add prefix to every column name
+
+    Returns:
+    :dataframe object: -- Dataframe object with scaled columns
+    :scaler: -- Scaler used in scaling.
     """
+    if df.empty:
+        return df,None
     scaler = StandardScaler()
     original_columns = df.columns
     try:
         df = scaler.fit_transform(df)
     except:
         flash("An error has occured!")
-        return None
+        return df,None
         
     if object_prefix is not None:
         original_columns = [object_prefix + col for col in original_columns]
@@ -838,13 +849,15 @@ def object_encode(df,object_prefix = None):
     :df: -- is the dataframe with values that will be scaled
     :object_prefix: -- if provided, add prefix to every column name
     """
+    if df.empty:
+        return df,None
     encoder = LabelEncoder()
     original_columns = df.columns
     try:
         df = encoder.fit_transform(df)
     except:
         flash("En error has occured!")
-        return None
+        return df,None
     
     if object_prefix is not None:
         original_columns = [object_prefix + col for col in original_columns]
@@ -869,3 +882,31 @@ def onehot_encode(df,object_prefix = None):
     if object_prefix is not None:
         encoded_columns = [object_prefix + col for col in encoded_columns]
     return pd.DataFrame(df,columns = encoded_columns),encoder
+
+def type_divider(df):
+    """
+    This function takes a dataframe and creates a dict where each key represents type and value of that type
+    is array of columns. 
+
+    Input:
+    :df: -- Input dataframe 
+
+    Return:
+    :type_dict: -- Divided type-columns dictionary
+    """
+    unique_dtypes = np.unique(df.dtypes.values)
+    type_dict = {}
+    for dtype in unique_dtypes:
+        columns = df.select_dtypes(include = [dtype]).columns
+        type_dict[dtype] = columns.values
+    return type_dict
+
+def instance_divider(df):
+    """
+    This function takes a dataframe and outputs a dict with number of columns assigned to each type.
+    """
+    no_of_integer = df.select_dtypes(include = [np.int8,np.int16,np.int32,np.int64]).shape[1]
+    no_of_inexact = df.select_dtypes(include = [np.float16,np.float32,np.float64]).shape[1]
+    no_of_object = df.select_dtypes(include = ["object"]).shape[1]
+    other_columns = df.shape[1] - (no_of_integer + no_of_inexact + no_of_object)
+    return no_of_integer,no_of_inexact,no_of_object,other_columns
