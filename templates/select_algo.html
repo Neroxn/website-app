@@ -4,7 +4,7 @@
 
 {% block head %}
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/select_algo.css') }}">
-<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
+
 {% endblock %}
 
 
@@ -13,17 +13,44 @@
 <div class="custom-select" style="width:200px;">
   <select class= "selector" name= 'selector' id= 'selector'>
     <option value="0" disabled="disabled" selected>Select algorithm:</option>
-    <option value="SVM">SVM</option>
-    <option value="RandomForest">RandomForest</option>
-    <option value="Adaboost">Adaboost</option>
+
+    <option value="none" disabled="disabled"> Regression Task </option>
+    {% if regression_model %}
+      {% if more_than_one %}
+      <option value="LinearRegression">Linear Regression</option>
+      <option value="RandomForestRegressor">Random Forest Regressor</option>
+      {% else %}
+      <option value="SVR">Support Vector Regressor</option>
+      <option value="AdaBoostRegressor">Adaboost Regressor</option>
+      {% endif %}
+    {% endif %}
+
+    <option value="none" disabled="disabled"> Classification Task </option>
+    {% if classification_model %}
+      {% if more_than_one %}
+      <option value="RandomForestClassifier">Random Forest Classifier</option>
+    
+      {% else %}
+      <option value="RandomForestClassifier">Random Forest Classifier</option>
+      <option value="LogisticRegression">Logistic Regression</option>
+      <option value="SVC">Support Vector Classifier</option>
+      <option value="AdaBoostClassifier">Adaboost Classifier</option>
+    
+    
+      {% endif %}
+    {% endif %}
   </select>
 </div>
 <div id = 'deneme'></div>
+
 {% endblock %}
 
 {% block scripts %}
 <script src="https://code.jquery.com/jquery-latest.min.js"></script>
 <script src= "{{ url_for('static',filename='js/select_algo.js') }}"></script>
 {% endblock %}
+
+
+
 
 

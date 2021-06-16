@@ -1,4 +1,4 @@
-/* Navbar container */
+
 .navbar {
   overflow: hidden;
   background-color: #333;
@@ -6,7 +6,7 @@
   border-radius: 10px;
 }
 
-/* Links inside the navbar */
+
 .navbar a {
   float: left;
   font-size: 16px;
@@ -16,13 +16,13 @@
   text-decoration: none;
 }
 
-/* The dropdown container */
+
 .dropdown {
   float: left;
   overflow: hidden;
 }
 
-/* Dropdown button */
+
 .dropdown .dropbtn {
   font-size: 16px;
   border: none;
@@ -34,12 +34,11 @@
   margin: 0; /* Important for vertical align on mobile phones */
 }
 
-/* Add a red background color to navbar links on hover */
 .navbar a:hover, .dropdown:hover .dropbtn {
   background-color: red;
 }
 
-/* Dropdown content (hidden by default) */
+
 .dropdown-content {
   display: none;
   position: absolute;
@@ -49,7 +48,7 @@
   z-index: 1;
 }
 
-/* Links inside the dropdown */
+
 .dropdown-content a {
   float: none;
   color: black;
@@ -59,16 +58,16 @@
   text-align: left;
 }
 
-/* Add a grey background color to dropdown links on hover */
+
 .dropdown-content a:hover {
   background-color: #ddd;
 }
 
-/* Show the dropdown menu on hover */
+
 .dropdown:hover .dropdown-content {
   display: block;
 }
-/* Logout button on navbar*/
+
 .logout {
   position: absolute;
   right: 2vw;
