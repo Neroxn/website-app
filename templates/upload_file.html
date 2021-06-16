@@ -11,7 +11,8 @@
 
 {% block page_content %}
 
-<form action="" method=post enctype=multipart/form-data>		<div class = "container">
+<form action="" method=post enctype=multipart/form-data>		
+	<div class = "container mt-5">
 		<h1>Upload the file for prediction </h1>
 		<div class="form-group">
 			<label class="form-check-label" >Accepted files are TXT exported from Excel and CSV. </label>
@@ -56,9 +57,11 @@
 </div>
 
 <div class='yazi'>
+<div class="container">
   {% if isLoaded %}
     <h2>Data with {{ rowS }} samples and {{ colS }} features is loaded successfully! </h2>
   {% endif %}
+  </div>
 </div>
 
 {% endblock %}

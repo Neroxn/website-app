@@ -10,12 +10,12 @@
 
 
 {% block page_content %}
-<div class= ".container-fluid">
-  <h1>Active Workspaces<span class="badge badge-primary"><form method="post"><input type="submit" class="btn btn-primary" name="Add Workspace" value="Add Workspace"></form></span></h1>
+<div class= ".container-fluid mt-3">
+  <h1>Active Workspaces<span class="badge badge-primary"><form method="post"><input type="submit" class="btn btn-primary ml-1" name="Add Workspace" value="Add Workspace"></form></span></h1>
   <div class="btn-group ">
     {% if workspaces is not none %}
       {% for workspace in workspaces %}
-        <a class="btn btn-info" href= "{{ url_for('workspace', active_workspace = workspace ) }}">{{ workspace }}</a>
+        <a class="btn btn-info ml-1 mt-1" href= "{{ url_for('workspace', active_workspace = workspace ) }}">{{ workspace }}</a>
       {% endfor %}
     {% endif %}
   </div>
@@ -25,16 +25,16 @@
 <div class= ".container-fluid"> 
   <h1>Workspace: {{ active_workspace }}</h1>
   	<form method="post" >
-		<input type="submit"  class="btn btn-primary" name="Delete Workspace" value="Delete Workspace">
+		<input type="submit"  class="btn btn-primary mt-1" name="Delete Workspace" value="Delete Workspace">
 	</form>
   <h2>Active DataFrames</h2>
   <form method="post">
 	<input type="submit" class="btn btn-primary" name="Save DataFrame" value="Save DataFrame">
-    <input type="submit" class="btn btn-primary" name="Download DataFrame" value="Download DataFrame">
+    <input type="submit" class="btn btn-primary ml-1" name="Download DataFrame" value="Download DataFrame">
   </form>
   <div class= "btn-group">
     {% for DataFrame in DataFrames %}
-      	<a class="btn btn-info" href= "{{ url_for('workspace', active_workspace =active_workspace, active_dataframe = DataFrame) }}">{{DataFrame}}</a>
+      	<a class="btn btn-info mt-1 ml-1" href= "{{ url_for('workspace', active_workspace =active_workspace, active_dataframe = DataFrame) }}">{{DataFrame}}</a>
     {% endfor %}
   </div>
 </div>
@@ -69,8 +69,8 @@
 <div class='yazi'>
   {% if isLoaded %}
      <form method="post" >
-      <input type="submit" class="btn btn-primary" name="Select DataFrame" value="Select as current DataFrame">
-      <input type="submit" class="btn btn-primary" name="Delete DataFrame" value="Delete DataFrame">
+      <input type="submit" class="btn btn-primary mt-1" name="Select DataFrame" value="Select as current DataFrame">
+      <input type="submit" class="btn btn-primary ml-1 mt-1" name="Delete DataFrame" value="Delete DataFrame">
       </form>
   {% endif %}
 
@@ -89,7 +89,7 @@
   {% endfor %}
 </div>
 <form method="post" >
-  <input type="submit" class="btn btn-primary" name="Clear Log" value="Clear Log">
+  <input type="submit" class="btn btn-primary mt-1" name="Clear Log" value="Clear Log">
    </form>
 </html>
     
