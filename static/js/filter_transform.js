@@ -17,7 +17,7 @@
     }
     function myFunction2() { 
     var checkBox = document.getElementsByClassName("myCheck");
-    var text = document.getElementsByClassName("text");
+    var text = document.getElementsById("text");
     var i;
 
     for(i = 0; i < checkBox.length; i++)
