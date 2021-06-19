@@ -3,6 +3,7 @@
 {% block title %} {% endblock %}
 
 {% block head %}
+{{ super() }}
 <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='css/bar_plot.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
 {% if graphSelected %}
@@ -14,26 +15,24 @@
 
 
 {% block page_content %}
-<h2> Select the feature to plot in bar graph. </h2>
-  <form method = "POST">
-    <div class = "selection-container">
-      <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
+<form method = "POST">
+  <div class = "container mt-3">
+    <h2> Select the feature  to plot in bar graph</h2>
+      <input type="text" class="form-control" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
       <ul id="myUL">
-          {% for col in columns %}
-        <li><label for="01"><input type="checkbox" name="parameters" value={{ col }}> {{ col }}</label></li>
-          {% endfor %}  
-      </div>  
-    <select name="selected_type" id="selected_type">
+        {% for col in columns %}
+          <li class="list-group-item"><label for="01"><input type="checkbox" name="parameters" value={{ col }}> {{ col }}</label></li>
+        {% endfor %}
+      <select name="selected_type" class="form-control" class="form-control" id="selected_type">
         <option value="Vertical"> Vertical </option>
         <option value="Horizontal"> Horizontal </option>
-        </select>
-    <br><br>
-    <input type="submit" value="Submit">
-  </form>
-
-{% if graphSelected %}
-<a href="{{ url_for('download_csv',path = path) }}">Click here to download graph as csv.</a>
-{% endif %}
+      </select>
+    <input type="submit" class="btn btn-primary mt-2" value="Submit">
+    {% if graphSelected %}
+      <a class="btn btn-success mt-2 ml-2" href="{{ url_for('download_csv',path = path) }}">Download graph as csv</a>
+    {% endif %}
+  </div>
+</form>
 
 {% if graphSelected %}
 <h1 style="text-align: center; margin-bottom: 40px;"> Pie Plot of parameter {{ selected }} </h1>
