@@ -274,9 +274,9 @@ def preprocess_for_model(selected_model,X,y):
         y_processed[y_processed_integers.columns] = y_processed_integers.astype(np.float32)
         
     if scaler is not None:
-        save_user_model(session.get('user_id'),scaler,body = "-model-scaler")
+        save_user_model(scaler,session.get('user_id'),body = "-model-scaler")
     if encoder is not None:
-        save_user_model(session.get('user_id'),encoder,body = "-model-encoder")
+        save_user_model(encoder,session.get('user_id'),body = "-model-encoder")
 
     print(y_processed)
     return X_processed,y_processed

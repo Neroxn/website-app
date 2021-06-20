@@ -110,3 +110,9 @@ div.scrollmenu {
   div.scrollmenu a:hover {
 	background-color: rgb(238, 4, 4);
   }
+
+.yazi{
+	text-align: center;
+	padding-top: 50px;
+  padding-bottom: 50px;
+}

@@ -1,3 +1,4 @@
+from pandas.core.frame import DataFrame
 from preprocess import scale
 import numpy as np
 import pandas as pd
@@ -946,3 +947,129 @@ def model_chooser(df,selected_y):
                 regression_model = True 
                 classification_model = False
     return regression_model,classification_model
+
+
+def get_metrics(typeModel,result_dataframe,test_y,predicted_y):
+    from sklearn.metrics import r2_score,mean_squared_error,mean_absolute_error,f1_score,log_loss
+    model_scores,mse_errors,mae_errors = [],[],[]
+    log_errors,f1_scores = [],[]
+    if typeModel == "regression":
+        for test_col,pred_col in zip(test_y.columns,predicted_y.columns):
+            model_scores += [r2_score(result_dataframe[test_col],result_dataframe[pred_col])]
+            mse_errors += [mean_squared_error(result_dataframe[test_col],result_dataframe[pred_col])]
+            mae_errors += [mean_absolute_error(result_dataframe[test_col],result_dataframe[pred_col])]
+
+    elif typeModel == "classification":
+        for test_col,pred_col in zip(test_y.columns,predicted_y.columns):
+            model_scores += [np.mean(result_dataframe[test_col].values == result_dataframe[pred_col].values)]
+            log_errors += [log_loss(result_dataframe[test_col],result_dataframe[pred_col])]
+            f1_scores += [f1_score(result_dataframe[test_col],result_dataframe[pred_col])]
+            #CONFUSION MATRIX TO BE ADDED
+    return model_scores,mse_errors,mae_errors,log_errors,f1_scores
+ 
+def apply_model_transformers(df,model_type):
+    """
+    Apply encoders that are saved to dataframe.
+    """
+    encoder = load_user_model(session.get('user_id'),body = "-model-encoder")
+    scaler = load_user_model(session.get('user_id'),body = "-model-scaler")
+    numeric_columns = df.select_dtypes(include=['number']).columns
+    object_columns = df.select_dtypes(include=['object']).columns
+    #Apply transformations for regression task
+    if model_type == "regression":
+        if scaler is not None:
+            scaled_data = scaler.transform(df[numeric_columns])
+            df[numeric_columns] = scaled_data
+        if encoder is not None:
+            encoded_data = encoder.transform(df[object_columns])
+            df[object_columns] = encoded_data
+    #Apply transformations for classification task
+    else:
+        X = df[session.get('selected_x')]
+        if scaler is not None:
+            scaled_data = scaler.transform(X.select_dtype(include = ["number"]))
+            df[X.select_dtypes(include = ['number']).columns] = scaled_data
+        if encoder is not None:
+            encoded_data = encoder.transform(df[object_columns])
+            df[object_columns] = encoded_data
+            
+    return df
+        
+
+
+def revert_model_transformers(df,model_type,transformer_list = None):
+    """
+    Apply encoders and scaler to the dataframe given.
+    Everything must be applied in reversed order
+    """
+    encoder = load_user_model(session.get('user_id'),body = "-model-encoder")
+    scaler = load_user_model(session.get('user_id'),body = "-model-scaler")
+    numeric_columns = df.select_dtypes(include=['number']).columns
+    object_columns = df.select_dtypes(include=['object']).columns
+    #Apply transformations for regression task
+    if model_type == "regression":
+
+        if encoder is not None:
+            encoded_data = encoder.inverse_transform(df[object_columns])
+            df[object_columns] = encoded_data
+        if scaler is not None:
+            scaled_data = scaler.inverse_transform(df[numeric_columns])
+            df[numeric_columns] = scaled_data
+
+    #Apply transformations for classification task
+    else:
+        X = df[session.get('selected_x')]
+        if encoder is not None:
+            encoded_data = encoder.inverse_transform(df[object_columns])
+            df[object_columns] = encoded_data
+        if scaler is not None:
+            scaled_data = scaler.inverse_transform(X.select_dtype(include = ["number"]))
+            df[X.select_dtypes(include = ['number']).columns] = scaled_data
+            
+    return df
+
+def apply_user_transformers(df,model_type):
+    """
+    Apply transformations that are done by user
+    """
+    return None
+
+def revert_user_transformers():
+    """
+    Revert user transformers
+    """
+    return None
+
+
+def load_(UPLOAD_FOLDER,files):
+    from werkzeug.utils import secure_filename
+    if 'file' not in files:
+        flash('No file part')
+        return None
+    file = files['file']
+
+    # check if user does not send any file
+    if file.filename == '':
+        flash('No selected file')
+        return None
+
+    # a valid file is submitted. 
+    if file and allowed_file(file.filename):
+        # construct the file path
+        filename = secure_filename(file.filename)
+        file_path = UPLOAD_FOLDER + "\\" + file.filename
+        print(file_path)
+        file.save(os.path.join(UPLOAD_FOLDER, filename))
+
+        # get delimitter and qualifier form the form.
+        delimitter = request.form['delimitter']
+        qualifier = request.form['qualifier']
+
+        if request.form.get('is-value-type'):
+            assumption = True
+        else:
+            assumption = False
+
+        # read the file and apply the model
+        _, _, df = load_dataset(file_path,delimitter=delimitter,qualifier = qualifier, assumption=assumption)
+        return df
