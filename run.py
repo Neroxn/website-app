@@ -102,7 +102,7 @@ def create_app(test_config = None):
 
             elif request.form.get('Download DataFrame'):
                 path = str(session.get("user_id")) + "_" + str(session.get("selected_workspace")) + "_" + str(session.get("selected_dataframe")) + ".csv"
-                path = "temp/" + path 
+                path = "csv/" + path 
                 return redirect(url_for("download_csv",path=path))
             #Render first screen
             return render_template("workspace.html",logs=session.get('user_log'))
@@ -141,79 +141,10 @@ def create_app(test_config = None):
 
         if request.method == 'POST':
 
-            # check if the post request has the file part
-            print(request.files)
-            if 'file' not in request.files:
-                flash('No file part')
-                return redirect(url_for("upload_file"))
-            file = request.files['file']
-
-            # check if user does not send any file
-            if file.filename == '':
-                flash('No selected file')
-                return redirect(url_for("upload_file"))
-
-            # a valid file is submitted. 
-            if file and allowed_file(file.filename):
-                # construct the file path
-                filename = secure_filename(file.filename)
-                file_path = UPLOAD_FOLDER + "\\" + file.filename
-                print(file_path)
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-                # get delimitter and qualifier form the form.
-                delimitter = request.form['delimitter']
-                qualifier = request.form['qualifier']
-
-                if request.form.get('is-value-type'):
-                    assumption = True
-                else:
-                    assumption = False
-
-                # read the file
-                _, _, df = load_dataset(file_path,delimitter=delimitter,qualifier = qualifier, assumption=assumption)
+            df = load_(app.config["UPLOAD_FOLDER"],request.files)
+            if df is not None:
                 save_temp_dataframe(df,session.get("user_id"))
                 create_workspace(session["user_id"], df)
-                
-
-                #Redirect to result page back if it comes from result page
-                if request.args.get("result"):
-                    model = load_user_model(session["user_id"])
-
-                    if session["selected_algo"] == "SVM":
-                        df2 = df[session["selected_x"]+session["selected_y"]]
-                        df2 = dropNanAndDuplicates(df2, 0.75)       
-                        actual = df2[session["selected_y"]]
-                        df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
-                        df2.values = session["scaler"].transform(df2.values)
-                        testX = df2[session["selected_x"]]
-                        result = model.predict(testX).reshape((len(testX),-1))
-                        result = session["scalerY"].inverse_transform(result)
-                        if encoderArr:
-                            result = stringDecoder(result, encoderArr, session["selected_y"])
-                    elif session["selected_algo"] == "RandomForest":
-                        df2 = df[session["selected_x"]+session["selected_y"]]
-                        df2 = dropNanAndDuplicates(df2, 0.75)
-                        actual = df2[session["selected_y"]]
-                        df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
-                        testX = df2[session["selected_x"]]
-                        result = model.predict(testX).reshape((len(testX),-1))
-                        if encoderArr:
-                            result = stringDecoder(result, encoderArr, session["selected_y"])
-                    elif session["selected_algo"] == "Adaboost":
-                        df2 = df[session["selected_x"]+session["selected_y"]]
-                        df2 = dropNanAndDuplicates(df2, 0.75)
-                        actual = df2[session["selected_y"]]
-                        df2, encoderArr = stringEncoder(df2, df2.loc[:, df2.dtypes == object].columns)
-                        testX = df2[session["selected_x"]]
-                        result = model.predict(testX).reshape((len(testX),-1))
-                        if encoderArr:
-                            result = stringDecoder(result, encoderArr, session["selected_y"])
-                            
-                    save_temp_dataframe(actual,session["user_id"],body="-actual-y")
-                    save_temp_dataframe(result,session["user_id"],body="-result-y")
-                    return redirect(url_for("result"))
-
                 description = str(datetime.datetime.now()) + " created new workspace. "
                 session["user_log"] += [description + user_log_information(session)] 
                 isLoaded = True
@@ -326,16 +257,16 @@ def create_app(test_config = None):
         if session.get("selected_model") == None:
             flash("No model has been trained!")
             return redirect(url_for("selectAlgo"))
+
         # load required models/dataframes
+        type_of_model = model_type(session.get("selected_model"))
         model = load_user_model(session.get('user_id'),body = "-user-model")
         test_dataframe = load_temp_dataframe(session.get('user_id'),body = "-test-dataframe")
         test_X,test_y = test_dataframe[session.get("selected_x")],test_dataframe[session.get("selected_y")]
 
         # prepare result dataframe
-        predicted_y = test_model(model,test_X)
-        predicted_y = pd.DataFrame(predicted_y,columns = test_y.columns)
+        predicted_y = pd.DataFrame(test_model(model,test_X),columns = test_y.columns)
         predicted_y.columns = ["predicted_" + col for col in test_y.columns]
-        test_y.columns  = ["actual_" + col  for col in test_y.columns]
         predicted_y.set_index([test_y.index],inplace=True) # match indexes
         result_dataframe = pd.concat([test_y,predicted_y],axis=1)   
 
@@ -343,30 +274,22 @@ def create_app(test_config = None):
         save_temp_dataframe(result_dataframe,session.get('user_id'),body = "-result-dataframe", method = "csv")
         path = "temp/" + str(session.get('user_id')) + '-result-dataframe' + ".csv"
         print(result_dataframe.head())
-        mse_errors,mae_errors,log_errors,f1_scores = [], [], [], []
-        # if model type is regression
-        if model_type(session.get("selected_model")) == "regression":
-            model_scores = [r2_score(result_dataframe[test_col],result_dataframe[pred_col]) \
-            for test_col,pred_col in zip(test_y.columns,predicted_y.columns)]
-            mse_errors = [mean_squared_error(result_dataframe[test_col],result_dataframe[pred_col]) \
-            for test_col,pred_col in zip(test_y.columns,predicted_y.columns)]
-            mae_errors = [mean_absolute_error(result_dataframe[test_col],result_dataframe[pred_col]) \
-            for test_col,pred_col in zip(test_y.columns,predicted_y.columns)]
-        # if model type is classification
-        elif model_type(session.get("selected_model")) == "classification":
-            # model accuracy
-            model_scores = [np.mean(result_dataframe[test_col].values == result_dataframe[pred_col].values) \
-            for test_col,pred_col in zip(test_y.columns,predicted_y.columns)]
+        model_scores,mse_errors,mae_errors,log_errors,f1_scores = get_metrics(type_of_model,result_dataframe,test_y,predicted_y)
 
-            log_errors = [log_loss(result_dataframe[test_col],result_dataframe[pred_col]) \
-            for test_col,pred_col in zip(test_y.columns,predicted_y.columns)]
+        #upload file as we did in the first part
+        if request.method == "POST":
+            df = load_(app.config['UPLOAD_FOLDER'],request.files)
+            if df is not None:
+                df = apply_model_transformers(df,type_of_model)
+                df_X = df[session.get('selected_x')]
+                df_Y = pd.DataFrame(model.predict(df_X),columns = session.get('selected_y'))
+                result_dataframe = revert_model_transformers(pd.concat([df_X,df_Y],axis=1),type_of_model)
+                
+                return render_template("result.html",
+                column_names=result_dataframe.columns.values, row_data=list(result_dataframe.head(10).values.tolist()),
+                link_column="Patient ID", zip=zip, rowS = result_dataframe.shape[0], colS =result_dataframe.shape[1],
+                path = path)
 
-            f1_scores = [f1_score(result_dataframe[test_col],result_dataframe[pred_col]) \
-            for test_col,pred_col in zip(test_y.columns,predicted_y.columns)]
-
-            #Confusion matrixes
-            
-            #confusion_matrix(test_results[test_columns],test_results[predicted_columns])
 
         return render_template("result.html",model_scores = model_scores,mse_errors = mse_errors,mae_errors = mae_errors,
         f1_scores = f1_scores, log_errors = log_errors,
@@ -594,29 +517,5 @@ def create_app(test_config = None):
     init_app(app)
     return app
 
-###########################
-# TO DO LIST : 
-
-# X> Way to handle with scalers-encoders - we should use same scalers and encoders in testing data. (5)
-#   >> Note that dataframe can be a little bit different than test data since we can do transformations
-#   .. in this case, we can either apply same transformations or expect that test data columns were same.
-#   .. Lets assume that user did created new columns but did not apply transformations (encoders or scalers)
-#   .. So we have to apply transformations in reverse order.  
-#   .. For memorizing the mod operations, a new system can be created so that we would not need any assumptions 
-#   .. and we can apply it to the new-uploaded dataframe without asking but this will be handled later.
-
-# X> Scaling will be used only when its needed -- for y, not for performence. (4)
-#   >> This is done mostly - we only need a way to apply pipe of transformations as mentioned above
-
-# X> A seperete choice for every dtypes should exist. So selecting all objects-ints-floats could be better/faster (3)
-#   >> This is important as we let user choose their feature for many things. 
-
-# 
-# X> Add result page. (6)
-
-
-
-# X> Add Boostrap for better web design
-############################
 
 
