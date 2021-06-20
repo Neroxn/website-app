@@ -3,6 +3,8 @@ import pandas as pd
 from sklearn.preprocessing.data import StandardScaler
 from sklearn.linear_model import LinearRegression,LogisticRegression,ElasticNet
 from sklearn.svm import SVR,SVC
+from sklearn.multioutput import MultiOutputRegressor,MultiOutputClassifier
+from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, RandomForestClassifier, AdaBoostClassifier
 from werkzeug.utils import redirect
 from preprocess import *
@@ -26,7 +28,7 @@ def create_SVR(selected_parameters):
     C = 1.0 if selected_parameters.get('C') == "" else float(selected_parameters.get('C'))    
 
     model = SVR(kernel = kernel, degree = degree, C = C)
-    return model
+    return MultiOutputRegressor(model)
 
 def create_SVC(selected_parameters):
     """
@@ -43,7 +45,7 @@ def create_SVC(selected_parameters):
     C = 1.0 if selected_parameters.get('C') == "" else float(selected_parameters.get('C'))
 
     model = SVC(kernel = kernel, degree = degree, C = C)
-    return model
+    return MultiOutputClassifier(model)
 
 def create_LogisticRegression(selected_parameters):
     """
@@ -59,6 +61,7 @@ def create_LogisticRegression(selected_parameters):
     l1_ratio = 0.5 if selected_parameters.get('l1_ratio') == "" else float(selected_parameters.get('l1_ratio'))
 
     model = LogisticRegression(penalty = penalty, C = C, l1_ratio = l1_ratio)
+    return MultiOutputClassifier(model)
 
 def create_LinearRegression(selected_parameters):
     """
@@ -71,7 +74,7 @@ def create_LinearRegression(selected_parameters):
     """
     model = LinearRegression()
 
-    return model
+    return MultiOutputRegressor(model)
 
 def create_ElasticNet(selected_parameters):
     """
@@ -86,8 +89,7 @@ def create_ElasticNet(selected_parameters):
     alpha = 1.0 if selected_parameters.get('alpha') == "" else float(selected_parameters.get('alpha'))
     l1_ratio = 0.5 if selected_parameters.get('l1_ratio') == "" else float(selected_parameters.get('l1_ratio'))
     model = ElasticNet(alpha = alpha, l1_ratio = l1_ratio)
-
-    return model
+    return MultiOutputRegressor(model)
 
 def create_RandomForestRegressor(selected_parameters):
     """
@@ -144,7 +146,7 @@ def create_AdaBoostRegressor(selected_parameters):
     learning_rate = 1.0 if selected_parameters.get('n_estimators') == "" else float(selected_parameters.get('learning_rate'))
     model = AdaBoostRegressor(n_estimators=n_estimators, learning_rate=learning_rate)
     
-    return model
+    return MultiOutputRegressor(model)
 
 def create_AdaBoostClassifier(selected_parameters):
     """
@@ -160,7 +162,7 @@ def create_AdaBoostClassifier(selected_parameters):
     learning_rate = 1.0 if selected_parameters.get('n_estimators') == "" else float(selected_parameters.get('learning_rate'))
     model = AdaBoostClassifier(n_estimators=n_estimators, learning_rate=learning_rate)
     
-    return model
+    return MultiOutputClassifier(model)
     
 
 def create_CNN(selected_parameters):
@@ -210,8 +212,8 @@ def model_type(selected_model):
     :modelType: -- "regression", "classification" or "both", else return flash
     """
     modelType = None
-    regression_tasks = ["SVR","LinearRegression"]
-    classification_tasks = ["SVC","LogisticRegression"]
+    regression_tasks = ["SVR","LinearRegression","RandomForestRegressor","AdaBoostRegressor"]
+    classification_tasks = ["SVC","LogisticRegression","RandomForestClassifier","AdaBoostClassifier"]
     mixed_tasks = []
 
     if selected_model in regression_tasks:
@@ -244,11 +246,10 @@ def preprocess_for_model(selected_model,X,y):
     concatted_df = pd.concat([X,y],axis = 1)
     numeric_columns = concatted_df.select_dtypes(include=['number']).columns
     object_columns = concatted_df.select_dtypes(include=['object']).columns
-
-    scale_encode_models =  ["SVR","SVC","LinearRegression","LogisticRegression","RandomForestRegressor",
-    "RandomForestClassifier","AdaBoostRegressor","AdaBoostClassifier"]
+    scaler,encoder = None,None
+    selected_type = model_type(selected_model)
     # scale Numerical Columns -> Encode Object Columns
-    if selected_model in scale_encode_models:
+    if selected_type == "regression":
         scaled_data,scaler = standard_scale(concatted_df[numeric_columns])
         encoded_data,encoder = object_encode(concatted_df[object_columns])
         if scaler is not None:
@@ -258,12 +259,26 @@ def preprocess_for_model(selected_model,X,y):
 
         X_processed,y_processed =  concatted_df[X.columns],concatted_df[y.columns]
 
+    else:
+        scaled_data,scaler = standard_scale(X.select_dtypes(include = ['number']))
+        encoded_data,encoder = object_encode(concatted_df[object_columns])
+        if scaler is not None:
+            concatted_df[X.select_dtypes(include = ['number']).columns] = scaled_data
+        if encoder is not None:
+            concatted_df[object_columns] = encoded_data
+
+        X_processed,y_processed =  concatted_df[X.columns],concatted_df[y.columns]
+
     if model_type(selected_model) == "regression": # if model is regression, change integers in y to float
         y_processed_integers = y_processed.select_dtypes(include = [np.int8,np.int16,np.int32,np.int64])
         y_processed[y_processed_integers.columns] = y_processed_integers.astype(np.float32)
         
-    save_user_model(session.get('user_id'),scaler,body = "-model-scaler")
-    save_user_model(session.get('user_id'),encoder,body = "-model-encoder")
+    if scaler is not None:
+        save_user_model(session.get('user_id'),scaler,body = "-model-scaler")
+    if encoder is not None:
+        save_user_model(session.get('user_id'),encoder,body = "-model-encoder")
+
+    print(y_processed)
     return X_processed,y_processed
 
 def fetch_model(selected_model,selected_parameters):

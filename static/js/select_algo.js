@@ -8,7 +8,7 @@ $('#selector').change(function(){
     }
     else if($(this).val() == "SVC"){
         $('#parameters').remove();
-         $('#deneme').append("<label id = \'parameters\'><h1>Please enter parameters of SVC algorithm.</h1> <form action=\"\" method=post enctype=multipart/form-data><p> Kernel <select name = \"kernel\"><option value=\"linear\">Linear</option><option value=\"poly\">Poly</option><option value=\"rbf\">RBF</option><option value=\"sigmoid\">Sigmoid</option></select></p> <p>C<input type = \"text\" placeholder = \"1.0\"name = \"C\" /></p><p>Degree <input type = \"text\" placeholder = \"3\" name = \"degree\" /></p><input type=\"checkbox\" name=\"selected_model\" style=\"display:none\" value = \"SVR\" checked><input type=submit value=Sumbit></form></label>");
+         $('#deneme').append("<label id = \'parameters\'><h1>Please enter parameters of SVC algorithm.</h1> <form action=\"\" method=post enctype=multipart/form-data><p> Kernel <select name = \"kernel\"><option value=\"linear\">Linear</option><option value=\"poly\">Poly</option><option value=\"rbf\">RBF</option><option value=\"sigmoid\">Sigmoid</option></select></p> <p>C<input type = \"text\" placeholder = \"1.0\"name = \"C\" /></p><p>Degree <input type = \"text\" placeholder = \"3\" name = \"degree\" /></p><input type=\"checkbox\" name=\"selected_model\" style=\"display:none\" value = \"SVC\" checked><input type=submit value=Sumbit></form></label>");
  
      }
      else if($(this).val() == "LinearRegression"){

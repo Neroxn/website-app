@@ -24,7 +24,9 @@ def create_app(test_config = None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
-        UPLOAD_FOLDER = UPLOAD_FOLDER
+        UPLOAD_FOLDER = UPLOAD_FOLDER,
+        FLASK_APP = "run.py",
+        FLASK_ENV = "development"
     )
     
     if test_config is None:
@@ -283,35 +285,8 @@ def create_app(test_config = None):
         if not session.get("selected_y"):
             session["selected_y"] = []
 
-        no_of_integer,no_of_inexact,no_of_object,other_columns = instance_divider(df[session.get("selected_y")])
-        if other_columns != 0:
-            flash("A variable y with no possible model selection has found!")
-            return redirect(url_for("select_y"))
-        else:
-            if no_of_integer != 0: 
-                if no_of_inexact == 0  and no_of_object != 0: #All columns are integer or object, use classification
-                    classification_model = True
-                    regression_model = False
 
-                elif no_of_object == 0: # All columns are integer or float, use regression
-                    regression_model = True 
-                    classification_model = False
-                
-                elif no_of_inexact != 0 and no_of_object != 0: #Columns are mixed, show error
-                    flash("No possible model can be selected! Please use different target variables for prediction")
-
-                else: #All columns are integer. Both of regression and classification can be used
-                    regression_model = True
-                    classification_model = True
-            else: 
-                if no_of_inexact == 0  and no_of_object != 0: #All columns are object, use classification
-                    classification_model = True
-                    regression_model = False
-
-                elif no_of_object == 0: # All columns are flaot, use regression
-                    regression_model = True 
-                    classification_model = False
-
+        regression_model,classification_model = model_chooser(df,session.get("selected_y"))
       
         if request.method == "POST":
             # get the df_X and df_y
@@ -319,13 +294,14 @@ def create_app(test_config = None):
             df_y = df[session.get("selected_y")]
 
             selected_model = request.form.get("selected_model")
-
+            session["selected_model"] = selected_model
             ##PART 1##
             print(selected_model,"Selected-model successfull")
             selected_parameters = request.form
             print(selected_parameters)
             df_X,df_y = preprocess_for_model(selected_model,df_X,df_y) # apply preprocess that is needed
             print("Preprocess-model successfull")
+
             ##PART 2##
             model = fetch_model(selected_model,selected_parameters) # create model with given parameters
             print("Fetch-model successfull")
@@ -336,31 +312,69 @@ def create_app(test_config = None):
             print("Train-model successfull")
 
             ##PART 4##
-            predicted_y = test_model(model,test_X) # predict the test_x
-            print("Test-model successfull")
-
-            ##PART 5##
-            # prepare result dataframe to show our performance
-            test_y.columns  = [col + "_actual" for col in test_y.columns]
-        
-            predicted_y = pd.DataFrame(predicted_y,columns = train_y.columns)
-            predicted_y.columns = [col + "_predicted" for col in test_y.columns]
-            predicted_y.set_index([test_y.index],inplace=True)   
-            result_dataframe = pd.concat([test_y,predicted_y],axis=1)
-            print(predicted_y.head())
-            print(test_y.head())
-            print(result_dataframe.head())
-            # save model and dataframe
-            save_user_model(model,session.get("user_id"),body = "test-model")
-
-            save_temp_dataframe(result_dataframe,session.get("user_id"), body = "-result-dataframe")
-            return "Succesfull"
+            save_user_model(model,session.get("user_id"),body = "-user-model")
+            save_temp_dataframe(pd.concat([test_X,test_y],axis = 1),session.get("user_id"), body = "-test-dataframe")
+            return redirect(url_for("result"))
 
         return render_template("select_algo.html",regression_model = regression_model, 
         classification_model = classification_model,more_than_one = len(session.get('selected_y')) > 1)
 
 
-        
+    @app.route('/result',methods = ["GET","POST"])
+    def result():
+        from sklearn.metrics import r2_score,mean_squared_error,mean_absolute_error,f1_score,log_loss
+        if session.get("selected_model") == None:
+            flash("No model has been trained!")
+            return redirect(url_for("selectAlgo"))
+        # load required models/dataframes
+        model = load_user_model(session.get('user_id'),body = "-user-model")
+        test_dataframe = load_temp_dataframe(session.get('user_id'),body = "-test-dataframe")
+        test_X,test_y = test_dataframe[session.get("selected_x")],test_dataframe[session.get("selected_y")]
+
+        # prepare result dataframe
+        predicted_y = test_model(model,test_X)
+        predicted_y = pd.DataFrame(predicted_y,columns = test_y.columns)
+        predicted_y.columns = ["predicted_" + col for col in test_y.columns]
+        test_y.columns  = ["actual_" + col  for col in test_y.columns]
+        predicted_y.set_index([test_y.index],inplace=True) # match indexes
+        result_dataframe = pd.concat([test_y,predicted_y],axis=1)   
+
+        # save dataframe for downloading purposes
+        save_temp_dataframe(result_dataframe,session.get('user_id'),body = "-result-dataframe", method = "csv")
+        path = "temp/" + str(session.get('user_id')) + '-result-dataframe' + ".csv"
+        print(result_dataframe.head())
+        mse_errors,mae_errors,log_errors,f1_scores = [], [], [], []
+        # if model type is regression
+        if model_type(session.get("selected_model")) == "regression":
+            model_scores = [r2_score(result_dataframe[test_col],result_dataframe[pred_col]) \
+            for test_col,pred_col in zip(test_y.columns,predicted_y.columns)]
+            mse_errors = [mean_squared_error(result_dataframe[test_col],result_dataframe[pred_col]) \
+            for test_col,pred_col in zip(test_y.columns,predicted_y.columns)]
+            mae_errors = [mean_absolute_error(result_dataframe[test_col],result_dataframe[pred_col]) \
+            for test_col,pred_col in zip(test_y.columns,predicted_y.columns)]
+        # if model type is classification
+        elif model_type(session.get("selected_model")) == "classification":
+            # model accuracy
+            model_scores = [np.mean(result_dataframe[test_col].values == result_dataframe[pred_col].values) \
+            for test_col,pred_col in zip(test_y.columns,predicted_y.columns)]
+
+            log_errors = [log_loss(result_dataframe[test_col],result_dataframe[pred_col]) \
+            for test_col,pred_col in zip(test_y.columns,predicted_y.columns)]
+
+            f1_scores = [f1_score(result_dataframe[test_col],result_dataframe[pred_col]) \
+            for test_col,pred_col in zip(test_y.columns,predicted_y.columns)]
+
+            #Confusion matrixes
+            
+            #confusion_matrix(test_results[test_columns],test_results[predicted_columns])
+
+        return render_template("result.html",model_scores = model_scores,mse_errors = mse_errors,mae_errors = mae_errors,
+        f1_scores = f1_scores, log_errors = log_errors,
+        column_names=result_dataframe.columns.values, row_data=list(result_dataframe.head(10).values.tolist()),
+                            link_column="Patient ID", zip=zip, rowS = result_dataframe.shape[0], colS = result_dataframe.shape[1],
+                            path = path)
+
+
     @app.route('/scatter_graph', methods = ["GET","POST"])
     def scatter_graph():
         df = load_temp_dataframe(session.get("user_id"))
@@ -415,13 +429,13 @@ def create_app(test_config = None):
 
                 description = str(datetime.datetime.now()) + " Pie graph is created with   " + str(len(request.form.getlist('parameters'))) +" variables."
                 session["user_log"] += [description + user_log_information(session)]
-                return pie_plot(df.select_dtypes(include = ["object"]),request.form.getlist("parameters"),sort_values)
+                return pie_plot(df.select_dtypes(include = ["object","int32","int64"]),request.form.getlist("parameters"),sort_values)
 
             else:
                 flash("Please select parameters to process.")
                 return redirect('pie_plot')
 
-        return render_template('graphs/pie_plot.html',columns = df.select_dtypes(include = ["object"]).columns)
+        return render_template('graphs/pie_plot.html',columns = df.select_dtypes(include = ["object","int32","int64"]).columns)
 
     @app.route('/dist_graph', methods = ["GET","POST"])
     def dist_graph():
@@ -562,47 +576,6 @@ def create_app(test_config = None):
             return redirect(url_for('workspace'))
         return send_file(path,mimetype="text/csv",attachment_filename='mygraph.csv',as_attachment=True)
     
-
-    @app.route('/result',methods=["GET","POST"])
-    def result():
-        if request.method == "POST":
-            #Get test data
-            if request.form.get("Upload test data"):
-                return redirect(url_for("upload_file", result = True))
-                
-        #Get actual and prediction Y
-        actual = load_temp_dataframe(session["user_id"],body="-actual-y")
-        pred = load_temp_dataframe(session["user_id"],body="-result-y")
-        
-        print(pred.head(5))
-        print(actual.head(5))
-        print(actual.shape,pred.shape)
-        #Check whether actual and pred are None
-        if actual is None or pred is None:
-            flash("Please select variables again")
-            return redirect(url_for("select_variables"))
-        
-        mae = []
-        mse = []
-        rmse = []
-        msle = []
-        mape = []
-        #Label columns as actual and prediction / calculate error metrics
-        for col in actual.columns:
-            mae.append("Mean absolute error of " + col + " is: "+ str(mean_absolute_error(actual[col], pred[col])))
-            mse.append("Mean square error of " + col + " is: "+ str(mean_squared_error(actual[col], pred[col])))
-            #msle.append("Mean squared logarithmic error of " + actual.columns[i] + " is: "+ str(mean_squared_log_error(actual[actual.columns[i]], pred[pred.columns[i]])))
-            
-        actual.columns = ["Actual "+ col for col in actual.columns]
-        pred.columns = ["Predicted "+ col for col in pred.columns]
-        
-        #Concat 2 df
-        df = pd.concat([actual, pred], axis = 1)
-        
-        
-        isLoaded = True
-        return render_template("result.html", column_names=df.columns.values, row_data=list(df.head(5).values.tolist()), link_column="Patient ID", zip=zip, isLoaded = isLoaded, rowS = df.shape[0], colS = df.shape[1], mae = mae, mse = mse, rmse = rmse, msle = msle, mape = mape)
-
     @app.errorhandler(403)
     def forbidden(e):
         return render_template('error/403.html'), 403
