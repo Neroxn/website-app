@@ -7,46 +7,97 @@
 {% endblock %}
 
 
+
 {% block page_content %}
+
+<div class="scrollmenu">
+  <table>
+      <tr>
+          {% for col in column_names %}
+          <th>{{col}}</th>
+          {% endfor %}
+      </tr>
+      {% for row in row_data %}
+      <tr>
+          {% for col, row_ in zip(column_names, row) %}
+          {% if col == link_column %}
+          <td>
+              <button type="submit" value={{ row_ }} name="person_id" form="patient_form" class="patient_button">
+                  {{ row_ }}
+              </button>
+          </td>
+          {% else %}
+          <td>{{row_}}</td>
+          {% endif %}
+          {% endfor %}
+      </tr>
+      {% endfor %}
+  
+  </table>
+</div>
+
+<a href="{{ url_for('download_csv',path = path) }}">Click here to download test results as csv file.</a>
+
 <div class="metrics">
-  {% for i in range(mae|length) %}
-  <ul>{{ mae[i] }}</ul>
-  <ul>{{ mse[i] }}</ul>
-  <ul>{{ rmse[i] }}</ul>
-  <ul>{{ msle[i] }}</ul>
-  <ul>{{ mape[i] }}</ul>
-  {% endfor %}
+  {% if model_scores %}
+  Computed model score for the test data.
+  <p>
+    {% for model_score in model_scores %}
+      {{ model_score }}
+    {% endfor %}  
+  </p>
+  {% endif %}
   </div>
-  
-  <div class="scrollmenu">
-    <table>
-        <tr>
-            {% for col in column_names %}
-            <th>{{col}}</th>
-            {% endfor %}
-        </tr>
-        {% for row in row_data %}
-        <tr>
-            {% for col, row_ in zip(column_names, row) %}
-            {% if col == link_column %}
-            <td>
-                <button type="submit" value={{ row_ }} name="person_id" form="patient_form" class="patient_button">
-                    {{ row_ }}
-                </button>
-            </td>
-            {% else %}
-            <td>{{row_}}</td>
-            {% endif %}
-            {% endfor %}
-        </tr>
-        {% endfor %}
-  
-    </table>
-  </div>
+
+<div class="metrics">
+  {% if mse_errors %}
+  Computed MSE (mean squared error) for the test data.
+  <p>
+    {% for mse in mse_errors %}
+      {{ mse }}
+    {% endfor %}  
+  </p>
+  {% endif %}
+</div>
+
+<div class="metrics">
+{% if mae_errors %}
+Computed MAE scores for the model.
+  <p>
+    {% for mae in mae_errors %}
+      {{ mae }}
+    {% endfor %}  
+  </p>
+{% endif %}
+</div>
+
+<div class="metrics">
+  {% if log_errors %}
+  Computed log-loss for the test data.
+  <p>
+    {% for log_error in log_errors %}
+      {{ log_error }}
+    {% endfor %}  
+  </p>
+  {% endif %}
+</div>
+
+<div class="metrics">
+  {% if f1_scores %}
+  Computed F1 Scores for the test data.
+  <p>
+    {% for f1_score in f1_scores %}
+      {{ f1_score }}
+    {% endfor %}  
+  </p>
+  {% endif %}
+</div>
+
   
 
-  <form method="post" >
-    <input type="submit" name="Upload test data" value="Upload test data">
+  <form action="" method=post enctype=multipart/form-data>
+    <p><input type=file name=file>
+    <input type=submit value=Upload>
   </form>
 
 {% endblock %}

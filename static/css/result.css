@@ -76,3 +76,37 @@ body {
 	position: absolute;
 	right: 2vw;
   }
+  div.scrollmenu {
+  background-color: rgb(112, 203, 255, 0.4);
+  overflow: auto;
+  white-space: nowrap;
+}
+
+div.scrollmenu a {
+  display: inline-block;
+  color: white;
+  text-align: center;
+  padding: 14px;
+  text-decoration: none;
+}
+
+div.scrollmenu a:hover {
+  background-color: rgb(238, 4, 4);
+}
+div.scrollmenu {
+	background-color: rgb(112, 203, 255, 0.4);
+	overflow: auto;
+	white-space: nowrap;
+  }
+  
+  div.scrollmenu a {
+	display: inline-block;
+	color: white;
+	text-align: center;
+	padding: 14px;
+	text-decoration: none;
+  }
+  
+  div.scrollmenu a:hover {
+	background-color: rgb(238, 4, 4);
+  }

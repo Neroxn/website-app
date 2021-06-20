@@ -764,11 +764,14 @@ def save_temp_dataframe(data,user_id, body="-df-temp", method = "feather" ):
     """
     if method == "feather":
         extension = ".feather"
-    path = "temp/" + str(user_id) + body + extension
-    print(data.head())
-    data = data.reset_index()
-    print(data.head())
-    data.to_feather(path)
+        path = "temp/" + str(user_id) + body + extension
+        data = data.reset_index()
+        data.to_feather(path)
+    if method == "csv":
+        extension = ".csv"
+        path = "temp/" + str(user_id) + body + extension
+        data.to_csv(path_or_buf = path)
+
 
 def calculate_model_no(user_id):
     if(user_id == None):
@@ -910,3 +913,36 @@ def instance_divider(df):
     no_of_object = df.select_dtypes(include = ["object"]).shape[1]
     other_columns = df.shape[1] - (no_of_integer + no_of_inexact + no_of_object)
     return no_of_integer,no_of_inexact,no_of_object,other_columns
+
+def model_chooser(df,selected_y):
+    no_of_integer,no_of_inexact,no_of_object,other_columns = instance_divider(df[selected_y])
+    print("Cols : ",no_of_integer,no_of_inexact,no_of_object,other_columns)
+    if other_columns != 0:
+        flash("A variable y with no possible model selection has found!")
+        return redirect(url_for("select_y"))
+    else:
+        if no_of_integer != 0: 
+            if no_of_inexact == 0  and no_of_object != 0: #All columns are integer or object, use classification
+                classification_model = True
+                regression_model = False
+
+            elif no_of_object == 0 and no_of_inexact != 0: # All columns are integer or float, use regression
+                regression_model = True 
+                classification_model = False
+            
+            elif no_of_inexact != 0 and no_of_object != 0: #Columns are mixed, show error
+                flash("No possible model can be selected! Please use different target variables for prediction")
+                return False,False
+
+            else: #All columns are integer. Both of regression and classification can be used
+                regression_model = True
+                classification_model = True
+        else: 
+            if no_of_inexact == 0  and no_of_object != 0: #All columns are object, use classification
+                classification_model = True
+                regression_model = False
+
+            elif no_of_object == 0: # All columns are flaot, use regression
+                regression_model = True 
+                classification_model = False
+    return regression_model,classification_model
