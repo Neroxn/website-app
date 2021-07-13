@@ -1,16 +1,19 @@
 import os
 import numpy as np  
 import pandas as pd
-from bokeh.resources import INLINE
 from flask import Flask, request, redirect, url_for,render_template,session,Response, send_file
 from werkzeug.utils import secure_filename
+
+from utils.auth import bp
+from utils.graphs import PCA_transformation,PCA_transformation_describe,correlation_plot,pie_plot,bar_plot,scatter_matrix,dist_plot,confusion_matrix_plot
+from utils.model_train import preprocess_for_model,fetch_model,train_model,model_type,test_model
+from utils.transformers import apply_model_transformers,revert_model_transformers,get_metrics,combine_columns
+from utils.workspace import *
 from utils import *
-from modelTrain import *
-from preprocess import *
-from auth import *
-from db import *
-from workspace import *
-from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_squared_log_error 
+
+from bokeh.resources import INLINE
+from bokeh.embed import components
+
 from sklearn.model_selection import train_test_split
 import datetime
 
@@ -43,6 +46,20 @@ def create_app(test_config = None):
         pass
 
     
+    @app.errorhandler(403)
+    def forbidden(e):
+        return render_template('error/403.html'), 403
+
+
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template('error/404.html'), 404
+
+
+    @app.errorhandler(500)
+    def internal_server_error(e):
+        return render_template('error/500.html'), 500
+
     @app.route('/')
     def entry():
         if session.get('user_id'):
@@ -70,6 +87,8 @@ def create_app(test_config = None):
                 delete_workspace(session["user_id"], session["selected_workspace"])
                 session["selected_workspace"] = None
                 session["selected_dataframe"] = None
+                session["selected_x"] = []
+                session["selected_y"] = []
                 return redirect(url_for("workspace"))
             
             #Save DataFrame button clicked, save current dataframe to current workspace
@@ -86,6 +105,8 @@ def create_app(test_config = None):
                 delete_checkpoint(session["user_id"], session["selected_workspace"], session["selected_dataframe"])
                 session["selected_workspace"] = None
                 session["selected_dataframe"] = None
+                session["selected_x"] = []
+                session["selected_y"] = []
                 return redirect(url_for("workspace"))
             
             #Select DataFrame button clicked, change current df to session["selected_dataframe"]
@@ -94,6 +115,8 @@ def create_app(test_config = None):
                 save_temp_dataframe(df,session.get("user_id"))
                 session["selected_workspace"] = None
                 session["selected_dataframe"] = None
+                session["selected_x"] = []
+                session["selected_y"] = []
                 return redirect(url_for("workspace"))
 
             elif request.form.get('Clear Log'):
@@ -253,7 +276,6 @@ def create_app(test_config = None):
 
     @app.route('/result',methods = ["GET","POST"])
     def result():
-        from sklearn.metrics import r2_score,mean_squared_error,mean_absolute_error,f1_score,log_loss
         if session.get("selected_model") == None:
             flash("No model has been trained!")
             return redirect(url_for("selectAlgo"))
@@ -262,19 +284,33 @@ def create_app(test_config = None):
         type_of_model = model_type(session.get("selected_model"))
         model = load_user_model(session.get('user_id'),body = "-user-model")
         test_dataframe = load_temp_dataframe(session.get('user_id'),body = "-test-dataframe")
-        test_X,test_y = test_dataframe[session.get("selected_x")],test_dataframe[session.get("selected_y")]
+        test_X,test_y = test_dataframe[session.get("selected_x")].copy(),test_dataframe[session.get("selected_y")].copy()
+        predicted_y = pd.DataFrame(test_model(model,test_X),columns = test_y.columns)
+        predicted_y.set_index([test_y.index],inplace=True) # match indexes
 
         # prepare result dataframe
-        predicted_y = pd.DataFrame(test_model(model,test_X),columns = test_y.columns)
-        predicted_y.columns = ["predicted_" + col for col in test_y.columns]
-        predicted_y.set_index([test_y.index],inplace=True) # match indexes
-        result_dataframe = pd.concat([test_y,predicted_y],axis=1)   
+        if type_of_model == "regression":
+            # Revert results before calculating metrics
+            _,test_y = revert_model_transformers(test_X,test_y)
+            _,predicted_y = revert_model_transformers(test_X,predicted_y)
+            predicted_y.columns = ["predicted_" + col for col in test_y.columns]
+            test_y.columns = ["actual_" + col for col in test_y.columns]
+            result_dataframe = pd.concat([test_y,predicted_y],axis=1)   
+            model_scores,mse_errors,mae_errors,log_errors,f1_scores = get_metrics(type_of_model,test_y,predicted_y)
+        
+        else:
+            # Calculate metrics before reverting results
+            model_scores,mse_errors,mae_errors,log_errors,f1_scores = get_metrics(type_of_model,test_y,predicted_y)
+            _,test_y = revert_model_transformers(test_X,test_y)
+            _,predicted_y = revert_model_transformers(test_X,predicted_y)
+            script,div = confusion_matrix_plot(test_y,predicted_y)
+            predicted_y.columns = ["predicted_" + col for col in test_y.columns]
+            test_y.columns = ["actual_" + col for col in test_y.columns]
+            result_dataframe = pd.concat([test_y,predicted_y],axis=1)  
 
-        # save dataframe for downloading purposes
         save_temp_dataframe(result_dataframe,session.get('user_id'),body = "-result-dataframe", method = "csv")
         path = "temp/" + str(session.get('user_id')) + '-result-dataframe' + ".csv"
         print(result_dataframe.head())
-        model_scores,mse_errors,mae_errors,log_errors,f1_scores = get_metrics(type_of_model,result_dataframe,test_y,predicted_y)
 
         #upload file as we did in the first part
         if request.method == "POST":
@@ -282,20 +318,26 @@ def create_app(test_config = None):
             if df is not None:
                 df = apply_model_transformers(df,type_of_model)
                 df_X = df[session.get('selected_x')]
-                df_Y = pd.DataFrame(model.predict(df_X),columns = session.get('selected_y'))
-                result_dataframe = revert_model_transformers(pd.concat([df_X,df_Y],axis=1),type_of_model)
+                df_y = pd.DataFrame(model.predict(df_X),columns = session.get('selected_y'))
+                df_X,df_y = revert_model_transformers(df_X,df_y,type_of_model)
                 
                 return render_template("result.html",
                 column_names=result_dataframe.columns.values, row_data=list(result_dataframe.head(10).values.tolist()),
                 link_column="Patient ID", zip=zip, rowS = result_dataframe.shape[0], colS =result_dataframe.shape[1],
                 path = path)
 
-
-        return render_template("result.html",model_scores = model_scores,mse_errors = mse_errors,mae_errors = mae_errors,
-        f1_scores = f1_scores, log_errors = log_errors,
-        column_names=result_dataframe.columns.values, row_data=list(result_dataframe.head(10).values.tolist()),
-                            link_column="Patient ID", zip=zip, rowS = result_dataframe.shape[0], colS = result_dataframe.shape[1],
-                            path = path)
+        if type_of_model == "classification":
+            return render_template("result.html",model_scores = model_scores,mse_errors = mse_errors,mae_errors = mae_errors,
+            f1_scores = f1_scores, log_errors = log_errors,
+            column_names=result_dataframe.columns.values, row_data=list(result_dataframe.head(10).values.tolist()),
+            link_column="Patient ID", zip=zip, rowS = result_dataframe.shape[0], colS = result_dataframe.shape[1],
+            path = path, plot_script=script,plot_div=div,js_resources=INLINE.render_js(),css_resources=INLINE.render_css(),graphSelected = True)
+        else:
+            return render_template("result.html",model_scores = model_scores,mse_errors = mse_errors,mae_errors = mae_errors,
+            f1_scores = f1_scores, log_errors = log_errors,
+            column_names=result_dataframe.columns.values, row_data=list(result_dataframe.head(10).values.tolist()),
+            link_column="Patient ID", zip=zip, rowS = result_dataframe.shape[0], colS = result_dataframe.shape[1],
+            path = path,graphSelected = False)
 
 
     @app.route('/scatter_graph', methods = ["GET","POST"])
@@ -499,19 +541,7 @@ def create_app(test_config = None):
             return redirect(url_for('workspace'))
         return send_file(path,mimetype="text/csv",attachment_filename='mygraph.csv',as_attachment=True)
     
-    @app.errorhandler(403)
-    def forbidden(e):
-        return render_template('error/403.html'), 403
 
-
-    @app.errorhandler(404)
-    def page_not_found(e):
-        return render_template('error/404.html'), 404
-
-
-    @app.errorhandler(500)
-    def internal_server_error(e):
-        return render_template('error/500.html'), 500
 
     app.register_blueprint(bp, url_prefix='/auth')
     init_app(app)

@@ -4,6 +4,12 @@
 
 {% block head %}
   <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/result.css') }}">
+{% if graphSelected %}
+  {{ js_resources|indent(4)|safe }}
+  {{ css_resources|indent(4)|safe }}
+  {{ plot_script|indent(4)|safe }}
+{% endif %}
+
 {% endblock %}
 
 
@@ -93,7 +99,11 @@ Computed MAE scores for the model.
   {% endif %}
 </div>
 
-  
+{% if graphSelected %}
+<div style="display: flex; justify-content: center;">
+  {{ plot_div|indent(4)|safe }}
+</div>
+{% endif %}
 
 <div class='yazi'>
   <h1>Upload the file for prediction. </h1>
@@ -110,7 +120,7 @@ Computed MAE scores for the model.
 {% endblock %}
 
 {% block scripts %}
-
+<script src="{{ url_for('static',filename='js/bar_plot.js') }}"></script>
 {% endblock %}
 
 

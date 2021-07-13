@@ -4,42 +4,40 @@
 {% block title %} {% endblock %}
 
 {% block head %}
+{{ super() }}
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/filter_transform.css') }}">
 {% endblock %}
 
 
 {% block page_content %}
-<h2> Please choose features to filter your dataset.</h2>
-Features not selected has no effect in filtering.
-  <form action="" method="post" style="display:block">
-    <div class = "selection-container">
-    <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
-    <ul id = "myUL">
-      {% for col in cols %}
-      <li><label for="myCheck"><input type="checkbox" class="myCheck" onclick="myFunction2()" value = 1>{{ col }}:</label></li> 
-    
-      {% if col in objectCols %}
-      <ul class = "text" style = "display:none">
-        {% for r in df[col].unique() %}
-        <input type = "checkbox" name = {{ col }} value = "{{ r }}" checked> {{ r }}
-        {% endfor %}
-      </ul>
-      {% endif %} 
-      
-      {% if col not in objectCols %}
-      <ul class = "text" style = "display:none">
-          <p>Lower Limit <input type = "text" name = {{ col }} /></p>
-          <p>Upper Limit <input type = "text" name = {{ col }} /></p>
-        </ul>
-      {% endif %} 
-      
-      {% endfor %}
-    </ul>
-      </div>
-   
-      <input type="submit" class='submit'>
-    </form>
+<form action="" method="post" style="display:block">
+	<div class = "container mt-5">
+    		<h2> Please choose features to filter your dataset.</h2>
+		<label class="form-check-label" >Features not selected has no effect in filtering.</label>
+    		<input type="text" class="form-control" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
+    		<ul id = "myUL" class="list-group">
+      		{% for col in cols %}
+      			<li class="list-group-item"><label for="myCheck">			 
+      			<input type="checkbox" class="myCheck" onclick="myFunction2()" value = 1>{{ col }}:</label></li> 
+      			{% if col in objectCols %}
+      				<ul class="list-group" id = "text" style = "display:none">
+        				{% for r in df[col].unique() %}
+        					<input type = "checkbox" name = {{ col }} value = "{{ r }}" checked> {{ r }}
+        				{% endfor %}
+      				</ul>
+      			{% endif %} 
+      			{% if col not in objectCols %}
+      				<ul class="list-group" id = "text" style = "display:none">
+          				<p>Lower Limit <input class="form-control" type = "text" name = {{ col }} /></p>
+          				<p>Upper Limit <input class="form-control" type = "text" name = {{ col }} /></p>
+        				</ul>
+      			{% endif %} 
+      		{% endfor %}
+    		</ul>
+    		<input type="submit" class="btn btn-primary active">
+	</div>
+</form>
 {% endblock %}
 
 {% block scripts %}
