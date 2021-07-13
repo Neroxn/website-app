@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 {% block title %} {% endblock %}
 
@@ -46,61 +45,59 @@
 <a class="btn btn-success mt-2" href="{{ url_for('download_csv',path = path) }}">Download test results as csv file.</a>
 
 <div class = "container mt-2">
-<div class="metrics">
-  {% if model_scores %}
-  Computed model score for the test data.
-  <p>
-    {% for model_score in model_scores %}
-      {{ model_score }}
-    {% endfor %}  
-  </p>
-  {% endif %}
-  </div>
+  <table class = "table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        {% for parameter in parameters %}
+        <th scope="col">{{ parameter }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+    {% if model_scores %}
+      <th scope = "row"> Model Scores </th>
+        {% for model_score in model_scores %}
+          <td>{{ model_score }}</td>
+        {% endfor %}  
+    {% endif %}
+  </tr>
 
-<div class="metrics">
-  {% if mse_errors %}
-  Computed MSE (mean squared error) for the test data.
-  <p>
-    {% for mse in mse_errors %}
-      {{ mse }}
-    {% endfor %}  
-  </p>
-  {% endif %}
-</div>
-
-<div class="metrics">
-{% if mae_errors %}
-Computed MAE scores for the model.
-  <p>
-    {% for mae in mae_errors %}
-      {{ mae }}
-    {% endfor %}  
-  </p>
-{% endif %}
-</div>
-
-<div class="metrics">
-  {% if log_errors %}
-  Computed log-loss for the test data.
-  <p>
-    {% for log_error in log_errors %}
-      {{ log_error }}
-    {% endfor %}  
-  </p>
-  {% endif %}
-</div>
-
-<div class="metrics">
-  {% if f1_scores %}
-  Computed F1 Scores for the test data.
-  <p>
-    {% for f1_score in f1_scores %}
-      {{ f1_score }}
-    {% endfor %}  
-  </p>
-  {% endif %}
-</div>
-</div>
+    <tr>
+    {% if mse_errors %}
+      <th scope = "row">MSE</th>
+        {% for mse in mse_errors %}
+          <td>{{ mse }}</td>
+        {% endfor %}  
+    {% endif %}
+  </tr>
+  <tr>
+    {% if mae_errors %}
+      <th scope = "row">MAE</th>
+      {% for mae in mae_errors %}
+        <td>{{ mae }}</td>
+      {% endfor %}  
+    {% endif %}
+  </tr>
+  <tr>
+    {% if log_errors %}
+      <th scope = "row">Log Error</th>
+        {% for log_error in log_errors %}
+        <td>{{ log_error }}</td>
+        {% endfor %}  
+    {% endif %}
+  </tr>
+  <tr>
+    {% if f1_scores %}
+      <th scope = "row">F1 Score</th>
+        {% for f1_score in f1_scores %}
+        <td>{{ f1_score }}</td>
+        {% endfor %}  
+    {% endif %}
+  </tr>
+</tbody>
+</table>
 
 {% if graphSelected %}
 <div style="display: flex; justify-content: center;">
@@ -132,5 +129,3 @@ Computed MAE scores for the model.
 {% block scripts %}
 <script src="{{ url_for('static',filename='js/bar_plot.js') }}"></script>
 {% endblock %}
-
-
