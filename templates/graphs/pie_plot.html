@@ -4,7 +4,9 @@
 {% block title %} {% endblock %}
 
 {% block head %}
-<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='css/bar_plot.css') }}">>
+{{ super() }}
+<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='css/bar_plot.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
 {% if graphSelected %}
   {{ js_resources|indent(4)|safe }}
   {{ css_resources|indent(4)|safe }}
@@ -14,23 +16,23 @@
 
 
 {% block page_content %}
-<h2> Select features for to create a Pie Chart: </h2>
-  <form method="post">
-  <div class = "selection-container">
-  <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
-  <ul id="myUL">
+<form method="post">
+  <div class = "container mt-3">
+    <h2> Select features for to create a Pie Chart</h2>
+    <input type="text" class="form-control" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
+    <ul id="myUL">
       {% for col in columns %}
-    <li><label for="01"><input type="checkbox" name="parameters" value={{ col }}> {{ col }}</label></li>
-      {% endfor %}  
-  </div>  
-  <label for="sort-values"><input type="checkbox" name="sort-values" value = "yes">Sort graph?</label>
-      <input type="submit" class='sumbit'>
-  </ul>
-  </form>
+        <li class="list-group-item"><label for="01"><input type="checkbox" name="parameters" value={{ col }}> {{ col }}</label></li>
+      {% endfor %}
+    </ul>
+    <label for="sort-values"><input type="checkbox" name="sort-values" value = "yes">Sort graph?</label><br>
+    <input type="submit" class= "btn btn-primary mt-2" value="Submit">
+    {% if graphSelected %}
+      <a class="btn btn-success mt-2 ml-2" href="{{ url_for('download_csv',path = path) }}">Download graph as csv</a>
+    {% endif %}
+  </div>
+</form>
 
-{% if graphSelected %}
-<a href="{{ url_for('download_csv',path = path) }}">Click here to download graph as csv.</a>
-{% endif %}
 {% if graphSelected %}
 <h1 style="text-align: center; margin-bottom: 40px;"> Pie Plot of parameters 
   {% for parameter in selected %}

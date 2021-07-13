@@ -3,6 +3,7 @@
 {% block title %} {% endblock %}
 
 {% block head %}
+{{ super() }}
   <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
   <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/pca_transform.css') }}">
   {% if graphSelected %}
@@ -14,11 +15,17 @@
 
 
 {% block page_content %}
-<h1 style = "color : gray;">Enter the parameters for PCA transformation.</h1>
 <form action="" method = "post" enctype="multipart/form-data">
-    <p>Reduced dimension (number of components after transformation)  <input type="text" name="n_component"> </p>
-    <p>Variance ratio (not required) <input type="text" name="variance_ratio"></p>
-    <input type="submit" value="submit">
+    <div class = "container mt-5">
+      <h1 style = "color : gray;">Enter the parameters for PCA transformation.</h1>
+		<div class = "form-group">
+    		    <label class="form-check-label" >Reduced dimension (number of components after transformation)</label>  
+            <input type="text" class="form-control" name="n_component"> 
+   			<label class="form-check-label" >Variance ratio (not required)</label>
+            <input type="text" class="form-control" name="variance_ratio">
+      	</div>
+      <input type="submit" class="btn btn-primary active" value="submit">
+	</div>
 </form>
 
 {% if graphSelected %}

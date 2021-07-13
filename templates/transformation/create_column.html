@@ -2,52 +2,84 @@
 {% block title %} {% endblock %}
 
 {% block head %}
-<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='css/navbar.css') }}">
-<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/create_column.css') }}">
+{{ super() }}
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/create_column.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
 {% endblock %}
 
 
 {% block page_content %}
-  <form action="" method = "post" enctype="multipart/form-data">
-    <h2> Select parameters for creating new colum : </h2>
-    <div class = "selection-container">
-    <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
+<form action="" method = "post" enctype="multipart/form-data">
+  <div class = "container mt-5">  	
+    	<h2> Select parameters for creating new colum : </h2>
+    <button type="button" class="btn btn-primary" onClick="toggle(this)" /> Toggle All</button>
+    <input type="text" class="form-control mt-2" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
     <ul id="myUL">
-        {% for col in columns %}
-      <li><label for="01"><input type="checkbox" name="selected_parameters" value={{ col }} checked> {{ col }}</label></li>
-        {% endfor %}  
-    </div>  
-      <input type="checkbox" onClick="toggle(this)" /> Toggle All<br/>
-    </ul>
+      {% for col in columns %}
+        <li class="list-group-item"><label for="01"><input type="checkbox" name="selected_parameters" value={{ col }} checked> {{ col }}</label></li>
+      {% endfor %}    
+    	</ul>
+  </div>
+  <div class = "container mt-3">
     <h2>Choose operation and parameters to create a new column with existings one.</h2>
-    <h3>Basic Operations</h3>
-    Create new columns by using following operation:
-    <input type="radio" name="selected_mode" value="sum" checked> Sum 
-    <input type="radio" name="selected_mode" value="mean"> Mean 
-    <input type="radio" name="selected_mode" value="difference"> Difference 
-    <input type="radio" name="selected_mode" value="concat"> Concat Objects
-    <p><input type="text" name = "new_column_name" > New column name</p>
-    <p><input type="checkbox" name = "delete_columns" value ="1" checked> Delete selected columns </p>
-
-    <h3>Column Handling</h3>
-    <p><input type="radio" name="selected_mode" value="drop-columns"> Drop Columns</p>
-    <p><input type="radio" name="selected_mode" value="drop-nan-rows"> Drop NaN Rows</p>
-    <p><input type="radio" name="selected_mode" value="drop-nan-columns"> Drop NaN Columns</p>
-
-    <h3>Impute Columns</h3>
-    Replace the columns with following operation:
-    <input type="radio" name="selected_mode" value="impute-columns-median"> Median
-    <input type="radio" name="selected_mode" value="impute-columns-mean"> Mean
-    <input type="radio" name="selected_mode" value="impute-columns-mfq"> Most Frequent
-
-    <h3>Column Preprocess</h3>
-    <input type="radio" name="selected_mode" value="min-max-scale"> Min-Max Scale
-    <input type="radio" name="selected_mode" value="standard-scale"> Standard Scale  
-    <input type="radio" name="selected_mode" value="object-encode"> Object Encoding
-    <input type="radio" name="selected_mode" value="onehot-encode"> Onehot Encoding
-    
-    <input type="submit" value="submit">
+    <div class = "container mt-2 ">
+      <h3>Basic Operations</h3>
+      <label>Create new columns by using following operation:</label><br>
+      <div class = "form-check-inline">
+        <input type="radio" class="form-check-input" name="selected_mode" value="sum" checked> Sum 
+      </div>
+      <div class = "form-check-inline">
+        <input type="radio" class="form-check-input" name="selected_mode" value="mean"> Mean
+      </div>
+      <div class = "form-check-inline">
+        <input type="radio" class="form-check-input" name="selected_mode" value="difference"> Difference 
+      </div>
+      <div class = "form-check-inline">
+        <input type="radio" class="form-check-input" name="selected_mode" value="concat"> Concat Objects
+      </div>
+      <input type="text" class="form-control mt-2" name = "new_column_name" placeholder = "New column name">
+      <div class="form-group form-check mt-1">
+        <input class="form-check-input" type="checkbox" name = "delete_columns" value ="1" checked> Delete selected columns
+      </div>
+	</div>
+    <div class = "container mt-2">
+      <h3>Column Handling</h3>
+      <p><input type="radio" name="selected_mode" value="drop-columns"> Drop Columns</p>
+      <p><input type="radio" name="selected_mode" value="drop-nan-rows"> Drop NaN Rows</p>
+      <p><input type="radio" name="selected_mode" value="drop-nan-columns"> Drop NaN Columns</p>
+	</div>
+    <div class = "container mt-2">
+      <h3>Impute Columns</h3>
+      <label>Replace the columns with following operation:</label><br>
+      <div class = "form-check-inline">
+        <input type="radio" class="form-check-input" name="selected_mode" value="impute-columns-median"> Median
+      </div>
+      <div class = "form-check-inline">
+        <input type="radio" class="form-check-input" name="selected_mode" value="impute-columns-mean"> Mean
+      </div>
+      <div class = "form-check-inline">
+        <input type="radio" class="form-check-input" name="selected_mode" value="impute-columns-mfq"> Most Frequent
+      </div>
+	</div>
+    <div class = "container mt-2">
+      <h3>Column Preprocess</h3>
+      <div class = "form-check-inline">
+        <input type="radio" class="form-check-input" name="selected_mode" value="min-max-scale"> Min-Max Scale
+      </div>
+      <div class = "form-check-inline">
+        <input type="radio" class="form-check-input" name="selected_mode" value="standard-scale"> Standard Scale  
+      </div>
+      <div class = "form-check-inline">
+        <input type="radio" class="form-check-input" name="selected_mode" value="object-encode"> Object Encoding
+      </div>
+      <div class = "form-check-inline">
+        <input type="radio" class="form-check-input" name="selected_mode" value="onehot-encode"> Onehot Encoding
+      </div>
+    </div>
+    <input type="submit" class="btn btn-primary mt-2" value="submit">
+  </div>
 </form>
+
 
 {% endblock %}
 
