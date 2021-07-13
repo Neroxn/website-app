@@ -3,22 +3,25 @@
 {% block title %} {% endblock %}
 
 {% block head %}
+{{ super() }}
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/select_algo.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
 {% endblock %}
 
 
 {% block page_content %}
-<h1>Select training algorithm </h1>
-<div class="custom-select" style="width:200px;">
-  <select class= "selector" name= 'selector' id= 'selector'>
-    <option value="0" disabled="disabled" selected>Select algorithm:</option>
-    <option value="SVM">SVM</option>
-    <option value="RandomForest">RandomForest</option>
-    <option value="Adaboost">Adaboost</option>
-  </select>
+<div class = "container mt-5">
+  <h1>Select training algorithm </h1>
+  <div class= "form-control">
+    <select class= "selector" name= 'selector' id= 'selector'>
+      <option value="0" disabled="disabled" selected>Select algorithm:</option>
+      <option value="SVM">SVM</option>
+      <option value="RandomForest">RandomForest</option>
+      <option value="Adaboost">Adaboost</option>
+    </select>
+  </div>
+<div class = "container mt-2" id = 'deneme'></div>
 </div>
-<div id = 'deneme'></div>
 {% endblock %}
 
 {% block scripts %}
