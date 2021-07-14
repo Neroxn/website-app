@@ -21,17 +21,17 @@
       			<li class="list-group-item"><label for="myCheck">			 
       			<input type="checkbox" class="myCheck" onclick="myFunction2()" value = 1>{{ col }}:</label></li> 
       			{% if col in objectCols %}
-      				<ul class="list-group" id = "text" style = "display:none">
+      				<ul class="list-group m1" style = "display:none">
         				{% for r in df[col].unique() %}
-        					<input type = "checkbox" name = {{ col }} value = "{{ r }}" checked> {{ r }}
+        					<input type = "checkbox" name = {{ col }} value = "{{ r }}"> {{ r }}
         				{% endfor %}
       				</ul>
       			{% endif %} 
       			{% if col not in objectCols %}
-      				<ul class="list-group" id = "text" style = "display:none">
-          				<p>Lower Limit <input class="form-control" type = "text" name = {{ col }} /></p>
+      				<ul class="list-group m1" style = "display:none">
+          				<p>Lower Limit <input class="form-control " type = "text" name = {{ col }} /></p>
           				<p>Upper Limit <input class="form-control" type = "text" name = {{ col }} /></p>
-        				</ul>
+					</ul>
       			{% endif %} 
       		{% endfor %}
     		</ul>

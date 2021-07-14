@@ -2,6 +2,7 @@ import os
 import numpy as np  
 import pandas as pd
 from flask import Flask, request, redirect, url_for,render_template,session,Response, send_file
+from pandas.core.indexes.base import InvalidIndexError
 from werkzeug.utils import secure_filename
 
 from utils.auth import bp
@@ -324,20 +325,21 @@ def create_app(test_config = None):
                 return render_template("result.html",
                 column_names=result_dataframe.columns.values, row_data=list(result_dataframe.head(10).values.tolist()),
                 link_column="Patient ID", zip=zip, rowS = result_dataframe.shape[0], colS =result_dataframe.shape[1],
-                path = path)
+                path = path, parameters = session.get("selected_y"))
 
         if type_of_model == "classification":
             return render_template("result.html",model_scores = model_scores,mse_errors = mse_errors,mae_errors = mae_errors,
             f1_scores = f1_scores, log_errors = log_errors,
             column_names=result_dataframe.columns.values, row_data=list(result_dataframe.head(10).values.tolist()),
             link_column="Patient ID", zip=zip, rowS = result_dataframe.shape[0], colS = result_dataframe.shape[1],
-            path = path, plot_script=script,plot_div=div,js_resources=INLINE.render_js(),css_resources=INLINE.render_css(),graphSelected = True)
+            path = path, plot_script=script,plot_div=div,js_resources=INLINE.render_js(),css_resources=INLINE.render_css(),graphSelected = True,
+            parameters = session.get("selected_y"))
         else:
             return render_template("result.html",model_scores = model_scores,mse_errors = mse_errors,mae_errors = mae_errors,
             f1_scores = f1_scores, log_errors = log_errors,
             column_names=result_dataframe.columns.values, row_data=list(result_dataframe.head(10).values.tolist()),
             link_column="Patient ID", zip=zip, rowS = result_dataframe.shape[0], colS = result_dataframe.shape[1],
-            path = path,graphSelected = False)
+            path = path,graphSelected = False,parameters = session.get("selected_y"))
 
 
     @app.route('/scatter_graph', methods = ["GET","POST"])
@@ -524,9 +526,12 @@ def create_app(test_config = None):
             session['user_log'] = []
         if request.method == "POST":
             actions = {}
-            for col in df.columns:
-                    actions[col] = request.form.getlist(col)
-            df = filter_data(df,actions).to_dict('list')
+            for col in df.columns: # remove colums with empty data
+                col_list = remove_empty_lists(request.form.getlist(col))
+                if col_list:
+                    actions[col] = col_list
+            print(actions)
+            df = filter_data(df,actions)
             save_temp_dataframe(df,session.get("user_id"))
             description = str(datetime.datetime.now()) + " Parameters are filtered." 
             session["user_log"] += [description + user_log_information(session)]

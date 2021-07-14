@@ -191,22 +191,13 @@ def handle_actions(data,actions):
     """
     handled_actions = {}
     
-    for col in data.columns:
+    for col in actions.keys():
+        print(col,actions[col])
         action_list = actions[col]
-        if data.dtypes[col] == object:
-            for i in range(len(action_list)):
-                if action_list[i] != "nan":
-                    continue
-                else:
-                    action_list[i] = np.nan
+        if data.dtypes[col] == object: # column is object
             handled_actions[col] = action_list
-            continue
-        
         else:
-            #Both parameters are empty. No action
-            if (action_list[0] == "" and action_list[1] == ""):
-                continue
-                
+      
             #First parameter is empty. Fill it with minimum (Lower Boundary)
             if (action_list[0] == "") or (check_float(action_list[0]) == False):
                 action_list[0] = data[col].min()
@@ -378,3 +369,11 @@ def model_chooser(df,selected_y):
                 classification_model = False
     return regression_model,classification_model
 
+def remove_empty_lists(data):
+    """
+    Return None if all elements are empty string.
+    """
+    data = np.array(data)
+    if np.all(data == ""):
+        return None
+    return data.tolist()
