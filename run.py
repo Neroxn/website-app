@@ -129,8 +129,7 @@ def create_app(test_config = None):
                 path = "csv/" + path 
                 return redirect(url_for("download_csv",path=path))
             #Render first screen
-            return render_template("workspace.html",logs=session.get('user_log'))
-            
+            return render_template("workspace.html",logs=session.get('user_log')[::-1])
             
         #Determine which workspace and checkpoint is selected
         session["selected_workspace"] = request.args.get('active_workspace')
@@ -144,18 +143,18 @@ def create_app(test_config = None):
             isLoaded = True
             return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]), DataFrames = get_workspace(session["user_id"], session["selected_workspace"]), column_names=df2.columns.values, row_data=list(df2.head(5).values.tolist()),
                             link_column="Patient ID", zip=zip, isLoaded = isLoaded, 
-                            rowS = df2.shape[0], colS = df2.shape[1], active_workspace = session["selected_workspace"],logs=session.get('user_log'))
+                            rowS = df2.shape[0], colS = df2.shape[1], active_workspace = session["selected_workspace"],logs=session.get('user_log')[::-1])
                             
                             
         #Only workspace selected, print checkpoints of the workspace
         elif session["selected_workspace"] is not None:
             print(get_workspace(session["user_id"],session["selected_workspace"]),session["selected_workspace"])
-            return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]), DataFrames = get_workspace(session["user_id"], session["selected_workspace"]), active_workspace = session["selected_workspace"],logs=session.get('user_log'))
+            return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]), DataFrames = get_workspace(session["user_id"], session["selected_workspace"]), active_workspace = session["selected_workspace"],logs=session.get('user_log')[::-1])
             
             
         #Nothing is selected, print workspaces
         else:
-            return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]),logs=session.get('user_log'))
+            return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]),logs=session.get('user_log')[::-1])
             
     @app.route('/upload_file', methods=['GET', 'POST'])
     def upload_file():
@@ -217,6 +216,10 @@ def create_app(test_config = None):
 
         if not session.get('user_log'):
             session['user_log'] = []
+
+        if len(session.get('selected_x')) == len(df.columns):
+            flash("No possible y can be selected since all features are selected as X parameter!")
+            return redirect(url_for('select_variables'))
 
         if request.method == 'POST':
             session["selected_y"] = request.form.getlist('hello')
@@ -290,6 +293,20 @@ def create_app(test_config = None):
 
         return render_template("select_algo.html",regression_model = regression_model, 
         classification_model = classification_model,more_than_one = len(session.get('selected_y')) > 1)
+
+    @app.route('/current_data', methods = ["GET","POST"])
+    def current_data():
+        df = load_temp_dataframe(session.get("user_id"))
+        selected_model = session.get('selected_model')
+        if request.method == "POST":
+            number_of_head = request.form.get('head_number')
+            number_of_head =  5 if check_float(number_of_head) == False else int(number_of_head) 
+            return render_template("current_data.html", column_names=df.columns.values, row_data=list(df.head(number_of_head).values.tolist()),
+                    link_column="Patient ID", zip=zip, rowS = df.shape[0], colS = df.shape[1],selected_model = selected_model,
+                    selected_x = np.sort(session.get('selected_x')), selected_y = np.sort(session.get('selected_y')))
+        return render_template("current_data.html", column_names=df.columns.values, row_data=list(df.head(5).values.tolist()),
+                            link_column="Patient ID", zip=zip, rowS = df.shape[0], colS = df.shape[1],selected_model = selected_model,
+                            selected_x = np.sort(session.get('selected_x')), selected_y = np.sort(session.get('selected_y')))
 
 
     @app.route('/result',methods = ["GET","POST"])

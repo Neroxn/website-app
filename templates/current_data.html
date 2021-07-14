@@ -1,0 +1,84 @@
+
+{% extends "base.html" %}
+{% block title %} {% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='css/workspace.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
+{% endblock %}
+
+
+{% block page_content %}
+<div class="container mt-5">
+    <h1>Dataframe being used:</h1>
+<div class="scrollmenu">
+    <table>
+        <tr>
+            {% for col in column_names %}
+            <th>{{col}}</th>
+            {% endfor %}
+        </tr>
+        {% for row in row_data %}
+        <tr>
+            {% for col, row_ in zip(column_names, row) %}
+            {% if col == link_column %}
+            <td>
+                <button type="submit" value={{ row_ }} name="person_id" form="patient_form" class="patient_button">
+                    {{ row_ }}
+                </button>
+            </td>
+            {% else %}
+            <td>{{row_}}</td>
+            {% endif %}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+  </div>
+<h4>Dataset has {{ rowS }} rows and {{ colS }} columns.</h4>    
+</div>
+<form action="" method=post enctype=multipart/form-data>		
+	<div class = "container mt-5">
+		<div class="form-group">
+      		<label class="form-check-label" ><h4>Number of rows to be displayed</h4></label>
+            <input type = "text" class="form-control" name = "head_number" placeholder='5'/>
+		</div>
+        <input class="btn btn-primary active" type=submit value=Update>
+	</div>    
+</form>
+
+<div class="container mt-5">
+    <h1>Parameters being selected:</h1>
+    <div class="row">
+        <div class="col-4">
+        <div class="list-group" id="list-tab" role="tablist">
+            <a class="list-group-item list-group-item-action active" id="list-home-list" data-toggle="list" href="#list-home" role="tab" aria-controls="home">Model</a>
+            <a class="list-group-item list-group-item-action" id="list-profile-list" data-toggle="list" href="#list-profile" role="tab" aria-controls="profile">X parameters</a>
+            <a class="list-group-item list-group-item-action" id="list-messages-list" data-toggle="list" href="#list-messages" role="tab" aria-controls="messages">Y parameters</a>
+        </div>
+        </div>
+        <div class="col-8">
+        <div class="tab-content" id="nav-tabContent">
+            <div class="tab-pane fade show active" id="list-home" role="tabpanel" aria-labelledby="list-home-list"><h4>The model that is selected is {{ selected_model }}</h4></div>
+            <div class="tab-pane fade" id="list-profile" role="tabpanel" aria-labelledby="list-profile-list">
+                {% for param_x in selected_x %}
+                <h4>{{ param_x }}</h4>
+                {% endfor %}
+            </div>
+            <div class="tab-pane fade" id="list-messages" role="tabpanel" aria-labelledby="list-messages-list">
+                {% for param_y in selected_y %}
+                <h4>{{ param_y }}</h4>
+                {% endfor %}
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+  
+
+{% block scripts %}
+
+{% endblock %}
+
