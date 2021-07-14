@@ -7,7 +7,7 @@ from sklearn.multioutput import MultiOutputRegressor,MultiOutputClassifier
 from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, RandomForestClassifier, AdaBoostClassifier
 from werkzeug.utils import redirect
 from .transformers import object_encode, standard_scale
-from utils import save_user_model
+from utils import save_user_model,check_float
 from flask import flash, url_for, session
 
 
@@ -22,9 +22,16 @@ def create_SVR(selected_parameters):
     >> Returns
     :model: -- model that is created
     """
-    kernel = 'rbf' if selected_parameters.get('kernel') == "" else selected_parameters.get('kernel')
-    degree = 3 if selected_parameters.get('kernel') == "" else int(selected_parameters.get('degree'))
-    C = 1.0 if selected_parameters.get('C') == "" else float(selected_parameters.get('C'))    
+    kernel = 'rbf' if selected_parameters.get('kernel') == False else selected_parameters.get('kernel')
+    degree = 3 if check_float(selected_parameters.get('kernel')) == False else int(selected_parameters.get('degree'))
+    C = 1.0 if check_float(selected_parameters.get('C')) == False else float(selected_parameters.get('C'))    
+
+    if degree < 0:
+        degree = 3
+        flash("Negative degree is changed to its default value.")
+    if C < 0:
+        C = 1.0
+        flash("Negative C value is changed to its default value")
 
     model = SVR(kernel = kernel, degree = degree, C = C)
     return MultiOutputRegressor(model)
@@ -40,8 +47,15 @@ def create_SVC(selected_parameters):
     :model: -- model that is created
     """
     kernel = 'rbf' if selected_parameters.get('kernel') == "" else selected_parameters.get('kernel')
-    degree = 3 if selected_parameters.get('kernel') == "" else int(selected_parameters.get('degree'))
-    C = 1.0 if selected_parameters.get('C') == "" else float(selected_parameters.get('C'))
+    degree = 3 if check_float(selected_parameters.get('kernel')) == False else int(selected_parameters.get('degree'))
+    C = 1.0 if check_float(selected_parameters.get('C')) == False else float(selected_parameters.get('C'))
+
+    if degree < 0:
+        degree = 3
+        flash("Negative degree is changed to its default value.")
+    if C < 0:
+        C = 1.0
+        flash("Negative C value is changed to its default value")
 
     model = SVC(kernel = kernel, degree = degree, C = C)
     return MultiOutputClassifier(model)
@@ -56,8 +70,15 @@ def create_LogisticRegression(selected_parameters):
     :model: -- model that is created
     """
     penalty = 'l2' if selected_parameters.get('penalty') == "" else selected_parameters.get('penalty')
-    C = 1.0 if selected_parameters.get('C') == "" else float(selected_parameters.get('C'))
-    l1_ratio = 0.5 if selected_parameters.get('l1_ratio') == "" else float(selected_parameters.get('l1_ratio'))
+    C = 1.0 if check_float(selected_parameters.get('C'))  == False else float(selected_parameters.get('C'))
+    l1_ratio = 0.5 if check_float(selected_parameters.get('l1_ratio')) == False else float(selected_parameters.get('l1_ratio'))
+
+    if l1_ratio < 0 or l1_ratio > 1:
+        l1_ratio = 0.5
+        flash("L1 ratio out of boundary and it is changed to its default value.")
+    if C < 0:
+        C = 1.0
+        flash("Negative C value is changed to its default value")
 
     model = LogisticRegression(penalty = penalty, C = C, l1_ratio = l1_ratio)
     return MultiOutputClassifier(model)
@@ -85,8 +106,16 @@ def create_ElasticNet(selected_parameters):
     >> Returns
     :model: -- model that is created
     """
-    alpha = 1.0 if selected_parameters.get('alpha') == "" else float(selected_parameters.get('alpha'))
-    l1_ratio = 0.5 if selected_parameters.get('l1_ratio') == "" else float(selected_parameters.get('l1_ratio'))
+    alpha = 1.0 if check_float(selected_parameters.get('alpha'))  == False else float(selected_parameters.get('alpha'))
+    l1_ratio = 0.5 if check_float(selected_parameters.get('l1_ratio'))  == False else float(selected_parameters.get('l1_ratio'))
+    
+    if l1_ratio < 0 or l1_ratio > 1:
+        l1_ratio = 0.5
+        flash("L1 ratio out of boundary and it is changed to its default value.")
+    if alpha < 0:
+        alpha = 1.0
+        flash("Negative alpha value is changed to its default value")
+
     model = ElasticNet(alpha = alpha, l1_ratio = l1_ratio)
     return MultiOutputRegressor(model)
 
@@ -100,11 +129,22 @@ def create_RandomForestRegressor(selected_parameters):
     >> Returns
     :model: -- model that is created
     """
-    n_estimators = 100 if selected_parameters.get('n_estimators') == "" else int(selected_parameters.get('n_estimators'))
-    max_depth = None if selected_parameters.get('max_depth') == "" else int(selected_parameters.get('max_depth'))
-    min_samples_split = 2 if selected_parameters.get('min_samples_split') == "" else int(selected_parameters.get('min_samples_split'))
-    min_samples_leaf = 1 if selected_parameters.get('min_samples_leaf') == "" else int(selected_parameters.get('min_samples_leaf'))
-
+    n_estimators = 100 if check_float(selected_parameters.get('n_estimators')) == False else int(selected_parameters.get('n_estimators'))
+    max_depth = None if check_float(selected_parameters.get('max_depth')) == False else int(selected_parameters.get('max_depth'))
+    min_samples_split = 2 if check_float(selected_parameters.get('min_samples_split')) == False else int(selected_parameters.get('min_samples_split'))
+    min_samples_leaf = 1 if check_float(selected_parameters.get('min_samples_leaf')) == False else int(selected_parameters.get('min_samples_leaf'))
+    if n_estimators < 0:
+        n_estimators = 100
+        flash("Negative n_estimator value is changed to its default value")
+    if max_depth < 0:
+        max_depth = None
+        flash("Negative max_depth value is changed to its default value")
+    if min_samples_split < 0:
+        min_samples_split = 2
+        flash("Negative min_samples_split value is changed to its default value")
+    if min_samples_leaf < 0:
+        min_samples_leaf = 1
+        flash("Negative min_samples_leaf value is changed to its default value")
 
     model = RandomForestRegressor(n_estimators=n_estimators, max_depth=max_depth,
     min_samples_leaf=min_samples_leaf,min_samples_split=min_samples_split)
@@ -121,10 +161,23 @@ def create_RandomForestClassifier(selected_parameters):
     >> Returns
     :model: -- model that is created
     """
-    n_estimators = 100 if selected_parameters.get('n_estimators') == "" else int(selected_parameters.get('n_estimators'))
-    max_depth = None if selected_parameters.get('max_depth') == "" else int(selected_parameters.get('max_depth'))
-    min_samples_split = 2 if selected_parameters.get('min_samples_split') == "" else int(selected_parameters.get('min_samples_split'))
-    min_samples_leaf = 1 if selected_parameters.get('min_samples_leaf') == "" else int(selected_parameters.get('min_samples_leaf'))
+    n_estimators = 100 if check_float(selected_parameters.get('n_estimators')) == False else int(selected_parameters.get('n_estimators'))
+    max_depth = None if check_float(selected_parameters.get('max_depth')) == False else int(selected_parameters.get('max_depth'))
+    min_samples_split = 2 if check_float(selected_parameters.get('min_samples_split')) == False else int(selected_parameters.get('min_samples_split'))
+    min_samples_leaf = 1 if check_float(selected_parameters.get('min_samples_leaf')) == False else int(selected_parameters.get('min_samples_leaf'))
+
+    if n_estimators < 0:
+        n_estimators = 100
+        flash("Negative n_estimator value is changed to its default value")
+    if max_depth < 0:
+        max_depth = None
+        flash("Negative max_depth value is changed to its default value")
+    if min_samples_split < 0:
+        min_samples_split = 2
+        flash("Negative min_samples_split value is changed to its default value")
+    if min_samples_leaf < 0:
+        min_samples_leaf = 1
+        flash("Negative min_samples_leaf value is changed to its default value")
 
     model= RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth,
     min_samples_leaf=min_samples_leaf,min_samples_split=min_samples_split)
@@ -141,10 +194,17 @@ def create_AdaBoostRegressor(selected_parameters):
     >> Returns
     :model: -- model that is created
     """
-    n_estimators =50 if selected_parameters.get('n_estimators') == "" else int(selected_parameters.get('n_estimators'))
-    learning_rate = 1.0 if selected_parameters.get('n_estimators') == "" else float(selected_parameters.get('learning_rate'))
+    n_estimators =50 if check_float(selected_parameters.get('n_estimators')) == False else int(selected_parameters.get('n_estimators'))
+    learning_rate = 1.0 if check_float(selected_parameters.get('n_estimators')) == False else float(selected_parameters.get('learning_rate'))
     model = AdaBoostRegressor(n_estimators=n_estimators, learning_rate=learning_rate)
     
+    if n_estimators < 0:
+        n_estimators = 50
+        flash("Negative n_estimator value is changed to its default value")
+    if learning_rate < 0:
+        learning_rate = 1.0
+        flash("Negative learning_rate value is changed to its default value")
+        
     return MultiOutputRegressor(model)
 
 def create_AdaBoostClassifier(selected_parameters):
@@ -157,8 +217,16 @@ def create_AdaBoostClassifier(selected_parameters):
     >> Returns
     :model: -- model that is created
     """
-    n_estimators =50 if selected_parameters.get('n_estimators') == "" else int(selected_parameters.get('n_estimators'))
-    learning_rate = 1.0 if selected_parameters.get('n_estimators') == "" else float(selected_parameters.get('learning_rate'))
+    n_estimators =50 if check_float(selected_parameters.get('n_estimators')) == False else int(selected_parameters.get('n_estimators'))
+    learning_rate = 1.0 if check_float(selected_parameters.get('n_estimators')) == False else float(selected_parameters.get('learning_rate'))
+    
+    if n_estimators < 0:
+        n_estimators = 50
+        flash("Negative n_estimator value is changed to its default value")
+    if learning_rate < 0:
+        learning_rate = 1.0
+        flash("Negative learning_rate value is changed to its default value")
+
     model = AdaBoostClassifier(n_estimators=n_estimators, learning_rate=learning_rate)
     
     return MultiOutputClassifier(model)

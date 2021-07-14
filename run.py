@@ -168,6 +168,8 @@ def create_app(test_config = None):
             df = load_(app.config["UPLOAD_FOLDER"],request.files)
             if df is not None:
                 save_temp_dataframe(df,session.get("user_id"))
+                session["selected_x"] = []
+                session["selected_y"] = []
                 create_workspace(session["user_id"], df)
                 description = str(datetime.datetime.now()) + " created new workspace. "
                 session["user_log"] += [description + user_log_information(session)] 
@@ -234,37 +236,52 @@ def create_app(test_config = None):
     @app.route("/selectAlgo",methods = ["GET","POST"])
     def selectAlgo():
         df = load_temp_dataframe(session.get("user_id"))
-        if not session.get("selected_x"):
+        nan_found = False
+        parameter_selected = True
+        # check if selected_x is selected
+        if not session.get("selected_x") or len(session.get("selected_x")) == 0:
             session["selected_x"] = []
+            parameter_selected = False
+            flash("No parameter for training is selected! Please select one to continue.")
+            return redirect(url_for("select_variables"))
 
-        if not session.get("selected_y"):
+        # check if selected_y is selected
+        if not session.get("selected_y") or len(session.get("selected_y")) == 0:
             session["selected_y"] = []
+            parameter_selected = False
+            flash("No parameter for prediction is selected! Please select one to continue.")
+            return redirect(url_for("select_y"))
 
+        has_NaN_value = [col for col in df.columns if df[col].isnull().any()]
+        if len(has_NaN_value) > 0:
+            nan_found = True
+            flash("A NaN value has been detected in the dataset! Please remove them to continue.List of features that has NaN values: {}".format(has_NaN_value))
 
         regression_model,classification_model = model_chooser(df,session.get("selected_y"))
       
-        if request.method == "POST":
+        if request.method == "POST" and nan_found == False and parameter_selected == True:
             # get the df_X and df_y
             df_X = df[session.get("selected_x")]
             df_y = df[session.get("selected_y")]
 
             selected_model = request.form.get("selected_model")
             session["selected_model"] = selected_model
-            ##PART 1##
-            print(selected_model,"Selected-model successfull")
-            selected_parameters = request.form
-            print(selected_parameters)
-            df_X,df_y = preprocess_for_model(selected_model,df_X,df_y) # apply preprocess that is needed
-            print("Preprocess-model successfull")
 
+            ##PART 1##
+            selected_parameters = request.form
+            df_X,df_y = preprocess_for_model(selected_model,df_X,df_y) # apply preprocess that is needed
+            if model_type(selected_model) == "classification":
+                one_class_columns = [col for col in df_y.columns if df_y[col].nunique() < 2]
+                if len(one_class_columns) != 0:
+                    flash("Some of the data we are trying to predict has only one class! Please remove such classes to continue: {}".format(one_class_columns))
+                    return render_template("select_algo.html",regression_model = regression_model, 
+        classification_model = classification_model,more_than_one = len(session.get('selected_y')) > 1)
             ##PART 2##
             model = fetch_model(selected_model,selected_parameters) # create model with given parameters
-            print("Fetch-model successfull")
 
             ##PART 3##
             train_X, test_X, train_y, test_y = train_test_split(df_X,df_y,train_size = 0.80) # split the dataframe
             model = train_model(model,train_X,train_y) # train the model 
-            print("Train-model successfull")
 
             ##PART 4##
             save_user_model(model,session.get("user_id"),body = "-user-model")
@@ -474,6 +491,8 @@ def create_app(test_config = None):
 
             df,pca = PCA_transformation(data = df, reduce_to = n_of_component, var_ratio = variance_ratio)
             save_temp_dataframe(df,session.get("user_id"))
+            session["selected_x"] = []
+            session["selected_y"] = []
             #This user-log system will be changed later on.
             description = str(datetime.datetime.now()) + " PCA transformation is applied."
             session["user_log"] += [description + user_log_information(session)]
@@ -514,6 +533,8 @@ def create_app(test_config = None):
             df,transformer = combine_columns(data = df, selected_columns = selected_parameters,
             new_column_name = new_column_name, mode = selected_mode, delete_column = delete_columns)
             save_temp_dataframe(df,session.get("user_id"))
+            session["selected_x"] = []
+            session["selected_y"] = []
             description = str(datetime.datetime.now()) + " New column is created."
             session["user_log"] += [description + user_log_information(session)]
 
@@ -533,6 +554,8 @@ def create_app(test_config = None):
             print(actions)
             df = filter_data(df,actions)
             save_temp_dataframe(df,session.get("user_id"))
+            session["selected_x"] = []
+            session["selected_y"] = []
             description = str(datetime.datetime.now()) + " Parameters are filtered." 
             session["user_log"] += [description + user_log_information(session)]
         return render_template("transformation/filter_transform.html", cols = df.columns, objectCols = df.select_dtypes(include = "object").columns, df = df)
