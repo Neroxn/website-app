@@ -37,6 +37,7 @@
     </table>
   </div>
 <h4>Dataset has {{ rowS }} rows and {{ colS }} columns.</h4>    
+<a class="btn btn-success mt-2 ml-2" href="{{ url_for('download_csv',path = path) }}">Download current dataframe as csv</a>
 </div>
 <form action="" method=post enctype=multipart/form-data>		
 	<div class = "container mt-5">
@@ -47,7 +48,7 @@
         <input class="btn btn-primary active" type=submit value=Update>
 	</div>    
 </form>
-
+<hr/>
 <div class="container mt-5">
     <h1>Parameters being selected:</h1>
     <div class="row">

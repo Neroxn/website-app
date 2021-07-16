@@ -17,11 +17,18 @@
 {% block page_content %}
 <form method="post">
   <div class = "container mt-3">
+    {% if graphSelected %}
+<h1 style="text-align: center; margin-bottom: 40px;">Created Scatter Matrix: </h1>
+<div style="display: flex; justify-content: center;">
+    {{ plot_div|indent(4)|safe }}
+</div>
+{% endif %}
+<hr/>
     <h2> Select up to 10 features for scatter matrix</h2>  
     <input type="text" id="myInput" class="form-control" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
     <ul id="myUL">
       {% for col in columns %}
-        <li class="list-group-item"><label for="01"><input type="checkbox" name="parameters" value={{ col }}> {{ col }}</label></li>
+        <li class="list-group-item"><label for="01"><input type="checkbox" name="parameters" value='{{ col }}'> {{ col }}</label></li>
       {% endfor %}  
     </ul>
     <input type="submit" class= "btn btn-primary mt-2" value="Submit">
@@ -29,12 +36,7 @@
 </form>
      
 
-{% if graphSelected %}
-<h1 style="text-align: center; margin-bottom: 40px;">{{ x_name }} vs {{ y_name }} scatter plot </h1>
-<div style="display: flex; justify-content: center;">
-    {{ plot_div|indent(4)|safe }}
-</div>
-{% endif %}
+
 
 {% endblock %}
 

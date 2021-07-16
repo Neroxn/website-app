@@ -14,6 +14,7 @@
   <h1>Select Y parameters that model will predict. </h1>
   <form method="post">
     <button type='button' class="btn btn-primary" onClick='toggle(this)'>Toggle All</button>
+    <hr/>
     <input class="form-control" id="myInput" type="text" placeholder="Search..">
     <table class="table table-borderless">
       <thead>
@@ -27,7 +28,7 @@
       {% for column in columns %}
         <tr>
           {% for elem in column %}
-            <td><input type="checkbox" name="hello" value= {{ elem }} checked> {{ elem }}</td>
+            <td><input type="checkbox" name="hello" value= '{{ elem }}' checked> {{ elem }}</td>
           {% endfor %}
         </tr>
       {% endfor %}

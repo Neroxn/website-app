@@ -111,32 +111,35 @@ def get_metrics(typeModel,test_y,predicted_y):
 
     return model_scores,mse_errors,mae_errors,log_errors,f1_scores
  
-def apply_model_transformers(X,y):
+def apply_model_transformers(X = None,y = None):
     """
     Apply encoders and scalers that are saved to dataframe.
     << Parameters
     :X: -- X dataframe that we will revert back to the original values by using scaler
     :y: -- y dataframe that we will revert back to the  original values by using scaler
     """
-    X = X.copy()
-    y = y.copy()
+    if X is not None:
+        X = X.copy()
+    if y is not None:
+        y = y.copy()
+        
     encoders = load_user_model(session.get('user_id'),body = "-model-encoders")
     scalers = load_user_model(session.get('user_id'),body = "-model-scalers")
     print(encoders,scalers)
     scaler_X,encoder_X = scalers[0],encoders[0]
     scaler_y,encoder_y= scalers[1],encoders[1]
 
-    if scaler_X is not None:
+    if scaler_X is not None and X is not None:
         print(session.get("numerical_X"))
         X[session.get("numerical_X")] = scaler_X.transform(X[session.get("numerical_X")])
-    if scaler_y is not None:
+    if scaler_y is not None and y is not None:
         print(session.get("numerical_y"))
         y[session.get("numerical_y")] = scaler_y.transform(y[session.get("numerical_y")])
-    if encoder_X is not None:
+    if encoder_X is not None and X is not None:
         for index,col in enumerate(session.get("object_X")):
             print(col,index,encoder_X[index])
             X[col] = encoder_X[index].transform(X[col])
-    if encoder_y is not None:
+    if encoder_y is not None and y is not None:
         for index,col in enumerate(session.get("object_y")):
             print(col,index,encoder_y[index])
             y[col] = encoder_y[index].transform(y[col])
@@ -145,7 +148,7 @@ def apply_model_transformers(X,y):
         
 
 
-def revert_model_transformers(X,y):
+def revert_model_transformers(X = None,y = None):
     """
     Apply encoders and scalers that are saved to dataframe.
     << Parameters
@@ -156,45 +159,35 @@ def revert_model_transformers(X,y):
     :X: -- X value that is scaled 
     :y: -- y value that is scaled
     """
-    X = X.copy()
-    y = y.copy()
+    if X is not None:
+        X = X.copy()
+    if y is not None:
+        y = y.copy()
     encoders = load_user_model(session.get('user_id'),body = "-model-encoders")
     scalers = load_user_model(session.get('user_id'),body = "-model-scalers")
     print(encoders,scalers)
     scaler_X,encoder_X = scalers[0],encoders[0]
     scaler_y,encoder_y= scalers[1],encoders[1]
 
-    if scaler_X is not None:
+    if scaler_X is not None and X is not None:
         print(session.get("numerical_X"))
         X[session.get("numerical_X")] = scaler_X.inverse_transform(X[session.get("numerical_X")])
-    if scaler_y is not None:
+    if scaler_y is not None and y is not None:
         print(session.get("numerical_y"))
         y[session.get("numerical_y")] = scaler_y.inverse_transform(y[session.get("numerical_y")])
 
-    if encoder_X is not None:
+    if encoder_X is not None and X is not None:
         for index,col in enumerate(session.get("object_X")):
             print(col,index,encoder_X[index])
             print(X[col].head())
             X[col] = encoder_X[index].inverse_transform(X[col])
-    if encoder_y is not None:
+    if encoder_y is not None and y is not None:
         for index,col in enumerate(session.get("object_y")):
             print(col,index,encoder_y[index])
             print(y[col].head())
             y[col] = encoder_y[index].inverse_transform(y[col])
             
     return X,y
-
-def apply_user_transformers(df,model_type):
-    """
-    Apply transformations that are done by user
-    """
-    return None
-
-def revert_user_transformers():
-    """
-    Revert user transformers
-    """
-    return None
 
 def combine_columns(data, selected_columns, new_column_name, mode, delete_column = True):
     """

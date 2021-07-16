@@ -118,22 +118,26 @@ def get_checkpoint(user_id, workspace_id, checkpoint_id):
     Get checkpoint
     """
     db = get_db()
-    """
+    
     #Check user exists
     if db.execute('SELECT username FROM user WHERE id = ?', (user_id,)).fetchone() is None:
         flash('No user with given id, cannot get checkpoint')
-        return
-        """
+        return None
 
     #Check workspace exists
     loc = str(user_id) + '_' + str(workspace_id) + '_' + str(checkpoint_id) + '.csv'
     query = db.execute('SELECT target_filename FROM transactions WHERE user_id = ? AND workspace_id = ? AND target_filename = ? ORDER BY target_filename DESC', (user_id, workspace_id, loc)).fetchone()
     if  query is None:
         flash('No workspace for given checkpoint_id, cannot get checkpoint')
-        return
+        return None
     
-    #Return df if exists
-    df = pd.read_csv('./csv/'+ query[0])
+    #Return df if exists. 
+    try:
+        df = pd.read_csv('./csv/'+ query[0])
+    except:
+        delete_checkpoint(user_id,workspace_id,checkpoint_id)
+        flash("An error has occured with the data that is selected. (Empty data is selected)")
+        return pd.DataFrame()
     return df
 
 def add_checkpoint(user_id, workspace_id, source_id, df, desc):
@@ -143,17 +147,15 @@ def add_checkpoint(user_id, workspace_id, source_id, df, desc):
     
     db = get_db()
     #Check user exists
-    """
     if db.execute('SELECT username FROM user WHERE id = ?', (user_id,)).fetchone() is None:
         flash('No user with given id, cannot add checkpoint')
-        return
-        """
+        return None
 
     #Check workspace exists
     query = db.execute('SELECT target_filename FROM transactions WHERE user_id = ? AND workspace_id = ? ORDER BY target_filename DESC', (user_id, workspace_id)).fetchone()
     if  query is None:
         flash('No workspace for given workspace_id, cannot add checkpoint')
-        return
+        return None
         
     #Get last checkpoint 
     last  = query[0]

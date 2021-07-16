@@ -240,7 +240,7 @@ def filter_data(data, actions):
 def remove_temp_files(user_id, head = "temp/"):
     if(user_id == None):
         flash("An error occured while removing files.")
-    arr = os.listdir('temp')
+    arr = os.listdir(head)
     user_files = []
     for file in arr:
         print(file.split("-"))
@@ -259,7 +259,6 @@ def load_temp_dataframe(user_id, body = "-df-temp",method = "feather",head = "te
     :user_id: -- is the id of the user 
     :method: -- how to save , default valeus is feather as it does great job at saving/loading temporary files
     """
-    print("(load temp) Called from ",os.getcwd())
     if method == "feather":
         extension = ".feather"
     path = head + str(user_id) + body + extension
@@ -268,7 +267,9 @@ def load_temp_dataframe(user_id, body = "-df-temp",method = "feather",head = "te
     except:
         save_temp_dataframe(pd.DataFrame(),user_id)
         data = pd.read_feather(path)
+    print(data.columns[0])
     data = data.set_index("index") if "index" in data.columns else data
+    print(data.head(5))
     return data
 
 def save_temp_dataframe(data,user_id, body="-df-temp", method = "feather", head = "temp/"):
@@ -279,34 +280,28 @@ def save_temp_dataframe(data,user_id, body="-df-temp", method = "feather", head 
     :user_id: -- is the id of the user 
     :method: -- how to save , default valeus is feather as it does great job at saving/loading temporary files
     """
-    print("(save temp) Called from ",os.getcwd())
     if method == "feather":
         extension = ".feather"
         path = head + str(user_id) + body + extension
-        data = data.reset_index()
+        data = data.reset_index() # convert index to index column
         data.to_feather(path)
         
     if method == "csv":
         extension = ".csv"
         path = head + str(user_id) + body + extension
-        data.to_csv(path_or_buf = path)
+        data.to_csv(path_or_buf = path) # convert index to csv
 
 
 def save_user_model(model,user_id,body = "-model", method = "pickle", head = "models/"):
     if method == "pickle":
         filename = head + str(user_id) + body +  ".sav"
-        print("(save model) Called from ",os.getcwd())
         pickle.dump(model, open(filename, 'wb'))
 
 def load_user_model(user_id,body = "-model", method = "pickle",head = "models/"):
     if method == "pickle":
         filename =head + str(user_id) + body + ".sav"
-        print("(load model) Called from ",os.getcwd())
         print(filename)
         return pickle.load(open(filename, 'rb'))
-
-def user_log_information(session):
-    return ""
 
 def type_divider(df):
     """
@@ -377,3 +372,21 @@ def remove_empty_lists(data):
     if np.all(data == ""):
         return None
     return data.tolist()
+
+def check_suitable(test_data, new_data):
+    """
+    Check if test_data used in training and new_data used in prediction is suitable.
+    Two dataframe is suitable if number of columns and their data-types are same. If column names are not equal
+    flash a warning to user.
+    """
+    # check if columns match
+    if(test_data.shape[1] != new_data.shape[1]): # not have equal number of columns
+        flash("New data has extra columns. Only columns used in model training is used")
+        if test_data.columns.isin(new_data.columns).all(): # columns match so suitable
+            return True
+        else:
+            flash("Test data does not match with new data.")
+            return False
+
+    return test_data.columns.isin(new_data.columns).all() # return true if columns match or false if not
+    

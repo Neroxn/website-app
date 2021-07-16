@@ -20,13 +20,14 @@
     {% endif %}
   </div>
 </div>
-
+<hr/>
 {% if DataFrames is not none %}
 <div class= ".container-fluid"> 
   <h2>Selected Workspace: {{ active_workspace }}</h2>
   	<form method="post" >
 		<input type="submit"  class="btn btn-primary mt-1" name="Delete Workspace" value="Delete Workspace">
 	</form>
+  <hr/>
   <h2>Active DataFrames</h2>
   <form method="post">
 	<input type="submit" class="btn btn-primary" name="Save DataFrame" value="Save DataFrame">
@@ -39,7 +40,7 @@
   </div>
 </div>
 {% endif %}
-
+<hr/>
 <div class="scrollmenu">
   <table>
       <tr>
@@ -73,10 +74,7 @@
       <input type="submit" class="btn btn-primary ml-1 mt-1" name="Delete DataFrame" value="Delete DataFrame">
       </form>
   {% endif %}
-
-  {% for error in errors %}
-    <h2> {{ error }} </h2>
-  {% endfor %}
+<hr/>
 </div>
 
 

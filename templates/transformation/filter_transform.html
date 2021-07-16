@@ -23,7 +23,7 @@
       			{% if col in objectCols %}
       				<ul class="list-group m1" style = "display:none">
         				{% for r in df[col].unique() %}
-        					<input type = "checkbox" name = {{ col }} value = "{{ r }}"> {{ r }}
+        					<input type = "checkbox" name = {{ col }} value = '{{ r }}'> {{ r }}
         				{% endfor %}
       				</ul>
       			{% endif %} 

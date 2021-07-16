@@ -17,29 +17,29 @@
 {% block page_content %}
 <form method = "POST">
   <div class = "container mt-3">
-    <h2> Select the feature  to plot in bar graph</h2>
-      <input type="text" class="form-control" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
-      <ul id="myUL">
-        {% for col in columns %}
-          <li class="list-group-item"><label for="01"><input type="checkbox" name="parameters" value={{ col }}> {{ col }}</label></li>
-        {% endfor %}
-      <select name="selected_type" class="form-control" class="form-control" id="selected_type">
-        <option value="Vertical"> Vertical </option>
-        <option value="Horizontal"> Horizontal </option>
-      </select>
-    <input type="submit" class="btn btn-primary mt-2" value="Submit">
-    {% if graphSelected %}
-      <a class="btn btn-success mt-2 ml-2" href="{{ url_for('download_csv',path = path) }}">Download graph as csv</a>
-    {% endif %}
-  </div>
-</form>
-
 {% if graphSelected %}
 <h1 style="text-align: center; margin-bottom: 40px;"> Pie Plot of parameter {{ selected }} </h1>
 <div style="display: flex; justify-content: center;">
     {{ plot_div|indent(4)|safe }}
 </div>
+<a class="btn btn-success mt-2 ml-2" href="{{ url_for('download_csv',path = path) }}">Download graph as csv</a>
 {% endif %}
+<hr/>
+    <h2> Select the feature  to plot in bar graph</h2>
+      <input type="text" class="form-control" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
+      <ul id="myUL">
+        {% for col in columns %}
+          <li class="list-group-item"><label for="01"><input type="checkbox" name="parameters" value='{{ col }}'> {{ col }}</label></li>
+        {% endfor %}
+      <select name="selected_type" class="form-control" class="form-control" id="selected_type">
+        <option value="Vertical"> Vertical </option>
+        <option value="Horizontal"> Horizontal </option>   
+      </select>
+    <input type="submit" class="btn btn-primary mt-2" value="Submit">
+
+  </div>
+</form>
+
 
 {% endblock %}
 

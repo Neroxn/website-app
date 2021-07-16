@@ -84,5 +84,6 @@ def load_logged_in_user():
 def logout():
     print("Logoutted.")
     remove_temp_files(session.get("user_id"))
+    remove_temp_files(session.get("user_id"),head = "models/")
     session.clear()
     return redirect(url_for('auth.login'))

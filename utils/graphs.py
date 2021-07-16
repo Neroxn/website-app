@@ -24,7 +24,7 @@ def scatter_matrix(dataset,features):
     scatter_plots = []
     y_max = len(dataset_selected.columns)-1
     for i, y_col in enumerate(dataset_selected.columns):
-        for j, x_col in enumerate(dataset_selected.columns):
+        for j, x_col in enumerate(dataset_selected.columns[::-1]) :
             p = figure(plot_width=100, plot_height=100, x_axis_label=x_col, y_axis_label=y_col)
             p.circle(source=dataset_source,x=x_col, y=y_col, fill_alpha=0.3, line_alpha=0.3, size=3)
             if j > 0:
@@ -43,7 +43,7 @@ def scatter_matrix(dataset,features):
                 p.x_range = scatter_plots[j].x_range
 
             scatter_plots.append(p)
-
+    #scatter_plots = list(np.flipud(scatter_plots))
     grid = gridplot(scatter_plots, ncols = len(dataset_selected.columns))
 
     script, div = components(grid)
@@ -164,20 +164,29 @@ def create_feature_matrix(data,parameters):
         result += [[name,data.loc[condition].shape[0]]]
     return result   
 
-def pie_plot(data,selected_parameter, sort_by_values = False):
+def pie_plot(data,selected_parameter, sort_by_values = False, top_values = 255):
     from math import pi 
     from bokeh.transform import cumsum 
     from bokeh.palettes import inferno
     result = create_feature_matrix(data,selected_parameter)
     df_pie_agg = pd.DataFrame(result,columns = ["Parameter","Count"])
     
+    if top_values > 255 or top_values < 1:
+        flash("Values to be displayed is out of bound. It is set to it's default value (255).")
+        top_values = 255
+
+
     # Add angles based on Win Count so each wedge is the right size
     df_pie_agg['Angle'] = df_pie_agg['Count']/df_pie_agg['Count'].sum() * 2*pi
-    df_pie_agg['color'] = inferno(df_pie_agg.shape[0])
-    
+    if top_values > df_pie_agg.shape[0]:
+        top_values = df_pie_agg.shape[0]
+        
+    color_series = inferno(top_values)
     if sort_by_values:
         df_pie_agg = df_pie_agg.sort_values(by = 'Count', ascending = False)
 
+    df_pie_agg = df_pie_agg.head(top_values)
+    df_pie_agg['color'] = color_series
     TOOLS = "box_select,lasso_select,pan,wheel_zoom,box_zoom,reset,help,save"
     # Draw a chart
     p = figure(title='Pie Chart', x_range=(-0.5, 1.0),
@@ -277,9 +286,9 @@ def confusion_matrix_plot(y_trues,y_preds):
             palette='Viridis256', low=df.value.min(), high=df.value.max())
         # Define a figure
         p = figure(
-            plot_width=800,
-            plot_height=600,
-            title="Heatmap of the" + y_true_col,
+            plot_width=int(1000/len(y_trues.columns)),
+            plot_height=int(600/len(y_trues.columns)),
+            title="Heatmap of the parameter :" + y_true_col,
             x_range=sorted(list(df.Predictions.drop_duplicates())),
             y_range=(sorted(list(df.Labels.drop_duplicates()))[::-1]),
             tools="box_select,lasso_select,pan,wheel_zoom,box_zoom,reset,help,save",
