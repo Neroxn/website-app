@@ -30,9 +30,7 @@ def create_app(test_config = None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
-        UPLOAD_FOLDER = UPLOAD_FOLDER,
-        FLASK_APP = "run.py",
-        FLASK_ENV = "development"
+        UPLOAD_FOLDER = UPLOAD_FOLDER
     )
     
     if test_config is None:
