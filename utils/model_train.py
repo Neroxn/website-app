@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing.data import StandardScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression,LogisticRegression,ElasticNet
 from sklearn.svm import SVR,SVC
 from sklearn.multioutput import MultiOutputRegressor,MultiOutputClassifier

@@ -29,8 +29,8 @@ def load_dataset(path,delimitter,qualifier,assumption = False):
         delimitter = ","
     if qualifier == "":
         qualifier = '""'
-    if os.path.isdir("datasets") == False: # if file does not exist, create instead
-        os.makedirs("datasets")
+    if os.path.isdir("csv") == False: # if file does not exist, create instead
+        os.makedirs("csv")
 
     extension = path.split(".")[1]
     if(extension == "csv"):

@@ -20,7 +20,9 @@ import datetime
 
 
 def create_app(test_config = None):
-    UPLOAD_FOLDER = 'C:\\Users\\kargi\\Flask Practi e\\see\\datasets'
+    if os.path.isdir("datasets") == False: # if file does not exist, create instead
+        os.makedirs("datasets")
+    UPLOAD_FOLDER = 'datasets'
     ALLOWED_EXTENSIONS = set(['txt', 'csv'])
     app = Flask(__name__) 
     DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite')
