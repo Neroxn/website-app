@@ -319,7 +319,6 @@ def preprocess_for_model(selected_model,X,y):
 
     if selected_type == "classification":
         scaled_data_y,scaler_y = y.select_dtypes(include = [np.int8,np.int16,np.int32,np.int64]),None
-        print("SSSSs",scaled_data_y)
         session["numerical_y"] = [col for col in y.select_dtypes(include =[np.int8,np.int16,np.int32,np.int64]).columns]
     else:
         scaled_data_y,scaler_y = standard_scale(y.select_dtypes(include = "number"))
@@ -359,7 +358,6 @@ def preprocess_for_model(selected_model,X,y):
     save_user_model(encoders,session.get('user_id'),body = "-model-encoders")
     save_user_model(scalers,session.get('user_id'),body = "-model-scalers")
 
-    print(y_processed)
     return X_processed,y_processed
 
 def fetch_model(selected_model,selected_parameters):
@@ -414,7 +412,6 @@ def train_model(model,train_X, train_y):
     #except:
     #    flash("An error has occured while training!")
     #    return redirect(url_for("selectAlgo"))
-    print(train_X.head(),train_y.head())
     model.fit(train_X,train_y)
     return model
 
@@ -429,7 +426,6 @@ def test_model(model, test_X):
     >> Returns
     :model: -- model that is trained
     """
-    print(model,model.predict(test_X))
     try:
         predicted_X = model.predict(test_X)
     except:

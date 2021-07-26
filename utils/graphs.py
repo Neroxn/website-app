@@ -87,7 +87,6 @@ def correlation_plot(df,selected_parameters):
 
     # Prepare data.frame in the right format
     data_corr = data_corr.stack().rename("value").reset_index()
-    print(selected_parameters)
 
     # I am using 'Viridis256' to map colors with value, change it with 'colors' if you need some specific colors
     mapper = LinearColorMapper(
@@ -271,15 +270,13 @@ def confusion_matrix_plot(y_trues,y_preds):
         y_true = y_trues[y_true_col]
         y_pred = y_preds[y_pred_col]
         decoded_labels = sorted(list(set(y_true)))
-        #print("Decoded labels are : ", decoded_labels)
-        #print(confusion_matrix(y_true,y_pred,labels = decoded_labels))
 
         df = pd.DataFrame(confusion_matrix(y_true,y_pred),columns = ["Predicted " + str(col) for col in decoded_labels], index = ["True " + str(col) for col in decoded_labels])
         df.index.name = "Labels"
         df.columns.name = "Predictions"
         
         df = df.stack().rename("value").reset_index()
-        #print(df)
+
         
         # Had a specific mapper to map color with value
         mapper = LinearColorMapper(
@@ -310,7 +307,6 @@ def confusion_matrix_plot(y_trues,y_preds):
             ticker=BasicTicker(desired_num_ticks=len(colors)))
         p.add_layout(color_bar, 'right')
         figures += [p]
-    print(figures)
     grid = gridplot(figures,ncols = int(np.ceil(len(figures)**(0.5))))
     return components(grid)
 
@@ -329,7 +325,6 @@ def bar_plot(data,selected_parameter, option = 'Vertical'):
     TOOLS = "box_select,lasso_select,pan,wheel_zoom,box_zoom,reset,help,save"
     result = create_feature_matrix(data,selected_parameter)
     df_pie_agg = pd.DataFrame(result,columns = ["Parameter","Count"])
-    print(df_pie_agg['Parameter'])
 
     if option == 'Vertical':
         p = figure(title='Vertical Bar Chart', x_range=df_pie_agg["Parameter"], 
@@ -396,7 +391,6 @@ def PCA_transformation(data, reduce_to = None, var_ratio = None):
         if var_ratio <= 1 and var_ratio >= 0:
             reduce_to = var_ratio
         else:
-            print("Error..")
             return None
 
 

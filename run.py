@@ -75,7 +75,6 @@ def create_app(test_config = None):
         if not session.get('user_log'):
             session['user_log'] = []
 
-        print("User log is : ",session.get('user_log'))
         if request.method == 'POST':
             
             #Add Workspace button clicked, redirect to upload screen
@@ -137,12 +136,10 @@ def create_app(test_config = None):
         #Determine which workspace and checkpoint is selected
         session["selected_workspace"] = request.args.get('active_workspace')
         session["selected_dataframe"] = request.args.get('active_dataframe')
-        print("Selected workspace and dataframe is :",session["selected_workspace"],session["selected_dataframe"])
         
         #Checkpoint selected, print it
         if session["selected_dataframe"] is not None:
             df2 = get_checkpoint(session["user_id"], session["selected_workspace"], session["selected_dataframe"])
-            print("DF2 is : ", session["user_id"],session["selected_workspace"],session["selected_dataframe"])
             isLoaded = True
             return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]), DataFrames = get_workspace(session["user_id"], session["selected_workspace"]), column_names=df2.columns.values, row_data=list(df2.head(5).values.tolist()),
                             link_column="Patient ID", zip=zip, isLoaded = isLoaded, 
@@ -151,7 +148,6 @@ def create_app(test_config = None):
                             
         #Only workspace selected, print checkpoints of the workspace
         elif session["selected_workspace"] is not None:
-            print(get_workspace(session["user_id"],session["selected_workspace"]),session["selected_workspace"])
             return render_template("workspace.html", workspaces = get_workspaces(session["user_id"]), DataFrames = get_workspace(session["user_id"], session["selected_workspace"]), active_workspace = session["selected_workspace"],logs=session.get('user_log')[::-1])
             
             
@@ -188,7 +184,6 @@ def create_app(test_config = None):
     @app.route("/select_variables", methods = ["GET","POST"])
     def select_variables():
         df = load_temp_dataframe(session.get("user_id"))
-        print(df.columns)
         if not session.get("selected_x"):
             session["selected_x"] = []
 
@@ -199,7 +194,6 @@ def create_app(test_config = None):
             session["selected_x"] = request.form.getlist('hello')
             description = str(datetime.datetime.now()) + " Selected  " + str(len(session['selected_x'])) + " many variables for the model."
             session["user_log"] += [description + ""]
-            print(session.get('selected_x'))
             return redirect(url_for('select_y'))
 
         if(len(df) != 0):
@@ -304,9 +298,9 @@ def create_app(test_config = None):
     def current_data():
         df = load_temp_dataframe(session.get("user_id"))
         selected_model = session.get('selected_model')
-        save_temp_dataframe(df,session.get('user_id'),method = "csv")
+        save_temp_dataframe(df,session.get('user_id'),method = "csv") # this will slow down the process
         if not session.get("selected_y"):
-            session["selected_y"] = []
+            session["selected_y"] = []  
 
         if not session.get("selected_x"):
             session["selected_x"] = []
@@ -358,7 +352,6 @@ def create_app(test_config = None):
 
         save_temp_dataframe(result_dataframe,session.get('user_id'),body = "-result-dataframe", method = "csv")
         path = "temp/" + str(session.get('user_id')) + '-result-dataframe' + ".csv"
-        print(result_dataframe.head())
 
         if type_of_model == "classification":
             return render_template("result.html",model_scores = model_scores,mse_errors = mse_errors,mae_errors = mae_errors,
@@ -398,7 +391,6 @@ def create_app(test_config = None):
                     for col in df_y.columns:
                         df[col] = df_y[col]
                     result_dataframe = df
-                    print(result_dataframe)
                     save_temp_dataframe(result_dataframe,session.get('user_id'),body = "-result-dataframe", method = "csv")
                     path = "temp/" + str(session.get('user_id')) + '-result-dataframe' + ".csv"
                     return render_template("result_user.html",
@@ -475,8 +467,7 @@ def create_app(test_config = None):
                 if request.form.get("sort-values"):
                     sort_values = True
                 else:
-                    sort_values = False
-                print(request.form.get('head_number'))                    
+                    sort_values = False               
                 top_values =  255 if check_float(request.form.get('head_number')) == False else int(request.form.get('head_number'))
                 description = str(datetime.datetime.now()) + " Pie graph is created with   " + str(len(request.form.getlist('parameters'))) +" variables."
                 session["user_log"] += [description + ""]
@@ -498,7 +489,6 @@ def create_app(test_config = None):
         if not session.get('user_log'):
             session['user_log'] = []
         if request.method == "POST":
-            print(request.form)
             if 'selected_parameter' in request.form:
                 numberBin = 20 if (request.form['numberBin'].isnumeric() == False) else int(request.form['numberBin'])
                 description = str(datetime.datetime.now()) + " Distribution graph is created for   " + request.form['selected_parameter']
@@ -519,7 +509,6 @@ def create_app(test_config = None):
         if not session.get('user_log'):
             session['user_log'] = []
         if request.method == "POST":
-            print(request.form)
             if request.form.getlist("parameters") != []:
                 if 'selected_type' in request.form:
                     selectedType = request.form["selected_type"]
@@ -637,7 +626,6 @@ def create_app(test_config = None):
                 col_list = remove_empty_lists(request.form.getlist(col))
                 if col_list:
                     actions[col] = col_list
-            print(actions)
             df = filter_data(df,actions)
             save_temp_dataframe(df,session.get("user_id"))
             session["selected_x"] = []
@@ -649,7 +637,6 @@ def create_app(test_config = None):
     @app.route('/download_csv')
     def download_csv():
         path = request.args.get('path')
-        print(path)
         if path is None:
             flash("An error occured during downloading file!")
             return redirect(url_for('workspace'))

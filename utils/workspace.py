@@ -195,7 +195,6 @@ def delete_checkpoint(user_id, workspace_id, checkpoint_id):
     #Delete csv file
     name = query[0]
     f = glob.glob('./csv/'+ name)[0]
-    print(name,f)
     os.remove(f)
     
     #Delete transaction

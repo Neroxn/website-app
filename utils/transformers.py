@@ -77,8 +77,6 @@ def onehot_encode(df,object_prefix = None):
     original_columns = df.columns
     df = encoder.fit_transform(df).toarray()
     encoded_columns = encoder.get_feature_names(original_columns)
-    print("Encoded columns are : ",encoded_columns)
-    print(df)
     if object_prefix is not None:
         encoded_columns = [object_prefix + col for col in encoded_columns]
     return pd.DataFrame(df,columns = encoded_columns),encoder
@@ -103,10 +101,6 @@ def get_metrics(typeModel,test_y,predicted_y):
     elif typeModel == "classification":
         for test_col,pred_col in zip(test_y.columns,predicted_y.columns):   
             model_scores += [np.mean(test_y[test_col].values == predicted_y[pred_col].values)]
-            print(test_y[test_col].shape)
-            print(predicted_y[pred_col].shape)
-            print(len(np.unique(test_y[test_col])),len(np.unique(predicted_y[pred_col])))
-            print(np.unique(test_y[test_col]),np.unique(predicted_y[pred_col]))
             f1_scores += [f1_score(test_y[test_col],predicted_y[pred_col],average="macro")] 
 
     return model_scores,mse_errors,mae_errors,log_errors,f1_scores
@@ -125,23 +119,18 @@ def apply_model_transformers(X = None,y = None):
         
     encoders = load_user_model(session.get('user_id'),body = "-model-encoders")
     scalers = load_user_model(session.get('user_id'),body = "-model-scalers")
-    print(encoders,scalers)
     scaler_X,encoder_X = scalers[0],encoders[0]
     scaler_y,encoder_y= scalers[1],encoders[1]
 
     if scaler_X is not None and X is not None:
-        print(session.get("numerical_X"))
         X[session.get("numerical_X")] = scaler_X.transform(X[session.get("numerical_X")])
     if scaler_y is not None and y is not None:
-        print(session.get("numerical_y"))
         y[session.get("numerical_y")] = scaler_y.transform(y[session.get("numerical_y")])
     if encoder_X is not None and X is not None:
         for index,col in enumerate(session.get("object_X")):
-            print(col,index,encoder_X[index])
             X[col] = encoder_X[index].transform(X[col])
     if encoder_y is not None and y is not None:
         for index,col in enumerate(session.get("object_y")):
-            print(col,index,encoder_y[index])
             y[col] = encoder_y[index].transform(y[col])
             
     return X,y
@@ -165,26 +154,21 @@ def revert_model_transformers(X = None,y = None):
         y = y.copy()
     encoders = load_user_model(session.get('user_id'),body = "-model-encoders")
     scalers = load_user_model(session.get('user_id'),body = "-model-scalers")
-    print(encoders,scalers)
     scaler_X,encoder_X = scalers[0],encoders[0]
     scaler_y,encoder_y= scalers[1],encoders[1]
 
     if scaler_X is not None and X is not None:
-        print(session.get("numerical_X"))
         X[session.get("numerical_X")] = scaler_X.inverse_transform(X[session.get("numerical_X")])
     if scaler_y is not None and y is not None:
-        print(session.get("numerical_y"))
         y[session.get("numerical_y")] = scaler_y.inverse_transform(y[session.get("numerical_y")])
 
     if encoder_X is not None and X is not None:
         for index,col in enumerate(session.get("object_X")):
-            print(col,index,encoder_X[index])
-            print(X[col].head())
+
             X[col] = encoder_X[index].inverse_transform(X[col])
     if encoder_y is not None and y is not None:
         for index,col in enumerate(session.get("object_y")):
-            print(col,index,encoder_y[index])
-            print(y[col].head())
+
             y[col] = encoder_y[index].inverse_transform(y[col])
             
     return X,y

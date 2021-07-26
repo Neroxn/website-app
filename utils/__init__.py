@@ -29,7 +29,8 @@ def load_dataset(path,delimitter,qualifier,assumption = False):
         delimitter = ","
     if qualifier == "":
         qualifier = '""'
-
+    if os.path.isdir("datasets") == False: # if file does not exist, create instead
+        os.makedirs("datasets")
 
     extension = path.split(".")[1]
     if(extension == "csv"):
@@ -192,7 +193,6 @@ def handle_actions(data,actions):
     handled_actions = {}
     
     for col in actions.keys():
-        print(col,actions[col])
         action_list = actions[col]
         if data.dtypes[col] == object: # column is object
             handled_actions[col] = action_list
@@ -227,17 +227,17 @@ def filter_data(data, actions):
     handled_actions = handle_actions(data,actions)
 
     for column, action in handled_actions.items():
-        #print(column,action)
         if data.dtypes[column] == object: #Datatype is object/discreate
             condition = data[column].isin(action)
             
         else:
             condition = (data[column] >= action[0]) & (data[column] < action[1])
         data = data[condition]
-        print(data.shape)
     return copy_data.loc[data.index]
 
 def remove_temp_files(user_id, head = "temp/"):
+    if os.path.isdir(head) == False: # if file does not exist, create instead
+        os.makedirs(head)
     if(user_id == None):
         flash("An error occured while removing files.")
     arr = os.listdir(head)
@@ -259,6 +259,9 @@ def load_temp_dataframe(user_id, body = "-df-temp",method = "feather",head = "te
     :user_id: -- is the id of the user 
     :method: -- how to save , default valeus is feather as it does great job at saving/loading temporary files
     """
+    if os.path.isdir(head) == False: # if file does not exist, create instead
+        os.makedirs(head)
+
     if method == "feather":
         extension = ".feather"
     path = head + str(user_id) + body + extension
@@ -267,9 +270,7 @@ def load_temp_dataframe(user_id, body = "-df-temp",method = "feather",head = "te
     except:
         save_temp_dataframe(pd.DataFrame(),user_id)
         data = pd.read_feather(path)
-    print(data.columns[0])
     data = data.set_index("index") if "index" in data.columns else data
-    print(data.head(5))
     return data
 
 def save_temp_dataframe(data,user_id, body="-df-temp", method = "feather", head = "temp/"):
@@ -280,6 +281,9 @@ def save_temp_dataframe(data,user_id, body="-df-temp", method = "feather", head 
     :user_id: -- is the id of the user 
     :method: -- how to save , default valeus is feather as it does great job at saving/loading temporary files
     """
+    if os.path.isdir(head) == False: # if file does not exist, create instead
+        os.makedirs(head)
+
     if method == "feather":
         extension = ".feather"
         path = head + str(user_id) + body + extension
@@ -293,11 +297,15 @@ def save_temp_dataframe(data,user_id, body="-df-temp", method = "feather", head 
 
 
 def save_user_model(model,user_id,body = "-model", method = "pickle", head = "models/"):
+    if os.path.isdir(head) == False: # if file does not exist, create instead
+        os.makedirs(head)
     if method == "pickle":
         filename = head + str(user_id) + body +  ".sav"
         pickle.dump(model, open(filename, 'wb'))
 
 def load_user_model(user_id,body = "-model", method = "pickle",head = "models/"):
+    if os.path.isdir(head) == False: # if file does not exist, create instead
+        os.makedirs(head)
     if method == "pickle":
         filename =head + str(user_id) + body + ".sav"
         print(filename)
@@ -333,7 +341,6 @@ def instance_divider(df):
 
 def model_chooser(df,selected_y):
     no_of_integer,no_of_inexact,no_of_object,other_columns = instance_divider(df[selected_y])
-    print("Cols : ",no_of_integer,no_of_inexact,no_of_object,other_columns)
     if other_columns != 0:
         flash("A variable y with no possible model selection has found!")
         return redirect(url_for("select_y"))

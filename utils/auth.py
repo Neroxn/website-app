@@ -73,7 +73,6 @@ def load_logged_in_user():
     
     #Get user session
     user_id = session.get('user_id')
-    print("User id of the current user is : ",user_id)
     #If user not exist in session, redirect to login page
     if user_id is None and request.endpoint not in ['auth.login','static','auth.register','auth.logout']:
         flash("Please login to continue")
@@ -82,7 +81,6 @@ def load_logged_in_user():
         
 @bp.route('/logout')
 def logout():
-    print("Logoutted.")
     remove_temp_files(session.get("user_id"))
     remove_temp_files(session.get("user_id"),head = "models/")
     session.clear()
