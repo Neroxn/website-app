@@ -1,4 +1,4 @@
-# Website Application for creating practical Machine Learning models.qx
+# Website Application for Creating Practical Machine Learning Models
 
 ## About website
 
@@ -10,6 +10,7 @@
   - Open any command prompt of your choice and set environment variables. Read the paragraph below for learning about environment variables.
   - Set the `secret_key` variable in the `app.py` carefully before deploying the app. In development process, this is not required.
   - Use the command `flask init-db` to initialize empty database and table for the user
+  - At last, to run the website, use the command `flask run app.py`. 
 
 Important environment variables that should be set before:
 - `FLASK_APP` -- This is important for determining where is the application. For more information, <a href=https://flask.palletsprojects.com/en/2.0.x/cli/> see. </a>
