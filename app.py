@@ -243,11 +243,11 @@ def create_app(test_config = None):
         return render_template("select_variables.html",types = dtypes, columns = cols)
 
     @app.route("/select_y",methods = ["GET","POST"])
-    """
-    Select features that will be predicted by the model. Features selected in this page will be used by model to guide the
-    performance of the model.
-    """
     def select_y():
+        """
+        Select features that will be predicted by the model. Features selected in this page will be used by model to guide the
+        performance of the model.
+        """
         df = load_temp_dataframe(session.get("user_id"))
         if not session.get("selected_y"):
             session["selected_y"] = []
