@@ -9,13 +9,16 @@ bp = Blueprint('auth', __name__)
 
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
+    """
+    Register the user to the database with username and password provided by the form.
+    """
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         db = get_db()
         error = None
 
-        if not username:
+        if not username: 
             error = 'Username is required.'
         elif not password:
             error = 'Password is required.'
@@ -28,7 +31,7 @@ def register():
             db.execute(
                 'INSERT INTO user (username, password) VALUES (?, ?)',
                 (username, generate_password_hash(password))
-            )
+            ) # select user from data base
             db.commit()
             return redirect(url_for('auth.login'))
 
@@ -38,6 +41,9 @@ def register():
     
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
+    """
+    Log the user in if the password and username matches.
+    """
     if session.get("user_id"): #if already login
         return redirect(url_for("workspace"))
 
@@ -48,15 +54,15 @@ def login():
         error = None
         user = db.execute(
             'SELECT * FROM user WHERE username = ?', (username,)
-        ).fetchone()
+        ).fetchone() # select user from data base
 
-        if user is None:
+        if user is None: 
             error = 'Incorrect username.'
         elif not check_password_hash(user['password'], password):
             error = 'Incorrect password.'
 
         if error is None:
-            session.clear()
+            session.clear() # clear the users session
             session['user_id'] = user['id']
             save_temp_dataframe(pd.DataFrame(),session.get("user_id")) #save empty dataframe after login
             return redirect(url_for('workspace'))
@@ -68,7 +74,7 @@ def login():
 @bp.before_app_request
 def load_logged_in_user():
     """
-    Function triggered before each request automatically
+    Function triggered before each request automatically. Check if user is logged in everytime.
     """
     
     #Get user session
@@ -81,6 +87,9 @@ def load_logged_in_user():
         
 @bp.route('/logout')
 def logout():
+    """
+    Logout the user from the session. Clear the files and session belonging to the user.
+    """
     remove_temp_files(session.get("user_id"))
     remove_temp_files(session.get("user_id"),head = "models/")
     session.clear()
