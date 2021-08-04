@@ -9,8 +9,8 @@
 - This website can be run using flask commands. 
   - Open any command prompt of your choice and set environment variables. Read the paragraph below for learning about environment variables.
   - Set the `secret_key` variable in the `app.py` carefully before deploying the app. In development process, this is not required.
-  - Use the command `flask init-db` to initialize empty database and table for the user
-  - At last, to run the website, use the command `flask run app.py`. 
+  - Use the command `flask init-db` to initialize empty database and table for the user. Note that empty data table is already provided in the `instance` folder so this step can only be used after deleting the existing one.
+  - At last, to run the website, use the command `flask run`. 
 
 Important environment variables that should be set before:
 - `FLASK_APP` -- This is important for determining where is the application. For more information, <a href=https://flask.palletsprojects.com/en/2.0.x/cli/> see. </a>
