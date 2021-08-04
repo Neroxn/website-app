@@ -33,18 +33,19 @@ def load_dataset(path,delimitter,qualifier,assumption = False):
         os.makedirs("csv")
 
     extension = path.split(".")[1]
-    if(extension == "csv"):
+    if(extension == "csv"): # if file is csv
         df = pd.read_csv(path)
         dataTypes = df.dtypes
         dataColumns = df.columns
         return dataTypes,dataColumns,df
-    elif(extension == "txt"):
+    
+    elif(extension == "txt"): # if file is txt
         dataColumns = []
         values = []
         dataTypes = []
         isTypes = assumption
         isColumn = True
-        with open(path,mode = "r") as file:
+        with open(path,mode = "r") as file: 
             for line in file:
                 # read line and split the columns/types
                 line = (line.rstrip('\n')).split(delimitter)
@@ -64,11 +65,9 @@ def load_dataset(path,delimitter,qualifier,assumption = False):
                     values += [line]
         # dataframe is created
         df = pd.DataFrame(data = values, columns = dataColumns)
-        #df.set_index(df.columns[0]) :>
-        #df.drop([df.columns[0]],inplace=True,axis=1)
-        if assumption:
-            df = assign_datatypes(df,dataTypes)
-        else:
+        if assumption: # assign datatypes to the columns
+            df = assign_datatypes(df,dataTypes) 
+        else: # data types are already correct
             dataTypes = df.dtypes
 
         return dataTypes,dataColumns,df
@@ -109,6 +108,13 @@ def choose_attributes(df,attributes):
     return chosen_df,unchosen_df
 
 def groupColumns(df):
+    """
+    Group the columns in DataFrame by their dtypes.
+    Parameters
+    :df: -- original data with columns
+    """
+    
+    # initilize empty lists
     dtypeArr = []
     columnArr = []
     lens = []
@@ -116,13 +122,13 @@ def groupColumns(df):
     type_dct = {str(k): list(v) for k, v in df.groupby(df.dtypes, axis=1)}
     type_dct = OrderedDict(sorted(type_dct.items(), key=lambda i: -len(i[1])))
 
-    for types in type_dct:
+    for types in type_dct: # sort column names in the type dictionary
         type_dct[types].sort()
         columnArr.append(type_dct[types])
         dtypeArr.append(types)
         lens.append(len(type_dct[types]))
     
-    for i in range(max(lens)):
+    for i in range(max(lens)): # finalize the result
         arr = []
         for k in range(len(dtypeArr)):
             if(i < lens[k]):
@@ -132,6 +138,12 @@ def groupColumns(df):
 
     
 def load_(UPLOAD_FOLDER,files):
+    """
+    Load the file uploaded by user. Check if its valid or not. If valid, return the DataFrame
+    Parameters:
+    :UPLOAD:FOLDER: -- path to the uploaded file
+    :files: -- file dictionary provided by Flask
+    """
     from werkzeug.utils import secure_filename
     if 'file' not in files:
         flash('No file part')
@@ -166,6 +178,7 @@ def load_(UPLOAD_FOLDER,files):
 
 def concat_columns(data,selected_columns):
     """
+    Concat object/discrete columns to create new columns.
     :data: -- Dataframe that will be used
     :selected_columns: -- Selected object columns
     """
@@ -176,6 +189,8 @@ def concat_columns(data,selected_columns):
 def check_float(potential_float):
     """
     Check if given expression is float / number.
+    Parameters:
+    :potential_float: -- unknown type 
     """
     try:
         float(potential_float)
@@ -236,19 +251,24 @@ def filter_data(data, actions):
     return copy_data.loc[data.index]
 
 def remove_temp_files(user_id, head = "temp/"):
+    """
+    Remove temporary files. This function will be used when the user is log out.
+    Parameters:
+    :user_id: -- id of the user
+    :head: -- folder that will be deleted
+    """
     if os.path.isdir(head) == False: # if file does not exist, create instead
         os.makedirs(head)
     if(user_id == None):
         flash("An error occured while removing files.")
     arr = os.listdir(head)
     user_files = []
-    for file in arr:
+    for file in arr: # split the file into an array
         print(file.split("-"))
-        if file.split("-")[0] == str(user_id):
+        if file.split("-")[0] == str(user_id): # file belongs to user that just logged out
             user_files += [file]
     
-    print("User files : ",user_files)
-    for file in user_files:
+    for file in user_files: # remove all files belongs to the user
         path = head + file
         os.remove(path)
 
@@ -297,6 +317,13 @@ def save_temp_dataframe(data,user_id, body="-df-temp", method = "feather", head 
 
 
 def save_user_model(model,user_id,body = "-model", method = "pickle", head = "models/"):
+    """
+    Save users trained model.
+    Parameters:
+    :body: -- body of the filename
+    :method: -- method for saving, only pickle exist for now
+    :head: -- folder for the file.
+    """
     if os.path.isdir(head) == False: # if file does not exist, create instead
         os.makedirs(head)
     if method == "pickle":
@@ -304,6 +331,13 @@ def save_user_model(model,user_id,body = "-model", method = "pickle", head = "mo
         pickle.dump(model, open(filename, 'wb'))
 
 def load_user_model(user_id,body = "-model", method = "pickle",head = "models/"):
+    """
+    Load users trained model.
+    Parameters:
+    :body: -- body of the filename
+    :method: -- method for saving, only pickle exist for now
+    :head: -- folder for the file.
+    """
     if os.path.isdir(head) == False: # if file does not exist, create instead
         os.makedirs(head)
     if method == "pickle":
@@ -340,6 +374,12 @@ def instance_divider(df):
     return no_of_integer,no_of_inexact,no_of_object,other_columns
 
 def model_chooser(df,selected_y):
+    """
+    Determine the task of the model by selected parameters.
+    Parameters:
+    :df: -- selected data
+    :selected_y: -- selected parameters that will be predicted
+    """
     no_of_integer,no_of_inexact,no_of_object,other_columns = instance_divider(df[selected_y])
     if other_columns != 0:
         flash("A variable y with no possible model selection has found!")
