@@ -1,6 +1,16 @@
 # Website Application for Creating Practical Machine Learning Models
 
 ## About website
+This website application designed for create simple machine learning models on datasets. You can;
+
+-Upload your datasets
+-Create different workspaces and work on different datasets
+-Visulize your datasets
+-Configure your datasets
+-Create simple machine learning models for your datasets
+-Inspect results of models
+-Save your workspaces and continue after login
+-Dowload your results
 
 ## Requirements
 - Required libraries are presented in the file `requirements.txt`. This important file can be used to create new virtual environment for Python - or for deploying the app.
