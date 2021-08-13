@@ -2,7 +2,7 @@
 ## Introduction
 Here we provide a basic tutorial about using website. It shows how one can upload a csv file and use it to train a model.
 ### Opening the website
-To run the website using flask, follow the small instructions written in the [README file.](../README.md). After running the application, website should be accessible in
+To run the website using flask, follow the short instructions written in the [README file.](../README.md). After running the application, website should be accessible in
 http://127.0.0.1:5000/. If not, an error occured and should be handled
 ### Registering and Logging In
 Register and login is easy as it sounds. After running the website, you have to login into your account to manage your data files. Register under the **Register** button. After registering, login to continue. 
