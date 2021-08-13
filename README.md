@@ -26,5 +26,7 @@ Important environment variables that should be set before:
 - `FLASK_APP` -- This is important for determining where is the application. For more information, <a href=https://flask.palletsprojects.com/en/2.0.x/cli/> see. </a>
 - `FLASK_ENV` -- This variable is used for starting the application in `debug` mode .For more information, <a href=https://flask.palletsprojects.com/en/2.0.x/config/> see. </a>
 
+For a tutorial, head to the <a href=img/>`img` </a> folder.
+
 ## Resources
 - Read <a href = https://flask.palletsprojects.com/en/2.0.x/> flask documentation </a> for more information about setting the environment variables, debugging and functions.
