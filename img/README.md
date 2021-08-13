@@ -25,6 +25,7 @@ After selecting parameters, you can create a new model in **Algorithms** page. N
 - Regression task
 - Classification task
 - Both
+
 can be determined based on your selected parameters. Different models can be constructed and for simpilcity, we choose *Logistic Regression* model for training our model.
 ![Figure 6](./tutorial_6.png)
 Hyperparameters of the model can be inputted by user - or else, default values will be used. Click **Submit** button to train model. If model is trained successfully, you will be redirect into **Result** page.
