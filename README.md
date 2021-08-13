@@ -19,7 +19,7 @@ This website application designed for create simple machine learning models on d
 - This website can be run using flask commands. 
   - Open any command prompt of your choice and set environment variables. Read the paragraph below for learning about environment variables.
   - Set the `secret_key` variable in the `app.py` carefully before deploying the app. In development process, this is not required.
-  - Use the command `flask init-db` to initialize empty database and table for the user. Note that empty data table is already provided in the `instance` folder so this step can only be used after deleting the existing one.
+  - Use the command `flask init-db` to initialize empty database and table for the user. Note that empty data table is already provided in the `instance` folder so this step is not required and should be used to initialize new empty table.
   - At last, to run the website, use the command `flask run`. 
 
 Important environment variables that should be set before:
