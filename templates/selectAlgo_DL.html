@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %} {% endblock %}
+
+{% block head %}
+{{ super() }}
+<link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/select_algo.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
+
+{% endblock %}
+
+{% block page_content %}
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+<!------ Include the above in your HEAD tag ---------->
+<form method=post enctype=multipart/form-data>
+    <div class="panel panel-default">
+        <div class="panel-heading">Add & Remove Layers to model.</div>
+        <div class="panel-heading">Layers</div>
+        <div class="panel-body">
+
+        <div class="col-sm-3 nopadding"> 
+            <div class="form-group">
+                <div class="input-group">
+                    <select class="form-control" id="layers" name="layer-selection">
+                        <option value="" disabled>Choose a layer</option>
+                        <option value="Dense">Dense</option>
+                        <option value="Dropout">Dropout</option>
+                        <option value="BatchNorm">Batch Normalization</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="col-sm-2 nopadding"> 
+            <div class="form-group">
+                <div class="input-group">
+                    <select class="form-control" id="activation" name="activation[]">
+                        <option value="" disabled selected>Choose activation function</option>
+                        <option value="tanh">Tanh</option>
+                        <option value="relu">ReLU</option>
+                        <option value="linear">Linear</option>
+                    </select>
+                </div>
+            </div>
+        </div>  
+
+        <div class="col-sm-2 nopadding">
+            <div class="form-group">
+                <input type="text" class="form-control" id="units" name="units[]" value="" placeholder="Units">
+            </div>
+        </div>  
+
+        <div class="col-sm-2 nopadding">
+            <div class="form-group">
+                <input type="text" class="form-control" id="ratio" name="ratio[]" value="" placeholder="Ratio">
+            </div>
+        </div>
+        <div class="col-sm-1 nopadding">
+            <div class="form-group">
+                <input type="text" class="form-control" id="momentum" name="momentum[]" value="" placeholder="Momentum">
+            </div>
+        </div>
+        <div class="col-sm-1 nopadding">
+            <div class="form-group">
+                <input type="text" class="form-control" id="epsilon" name="epsilon[]" value="" placeholder="Epsilon">
+            </div>
+        </div>
+        <div class="input-group-btn">
+            <button class="btn btn-success" type="button"  onclick="layer_fields();"> <span class="glyphicon glyphicon-plus" aria-hidden="true"></span> </button>
+        </div>
+        
+        <div id="layer_fields"></div>   
+        <div class="clear"></div>
+
+    </div>
+    <div class="panel-footer"><small>Press <span class="glyphicon glyphicon-plus gs"></span> to add another form field. </small> <br> <small>Press <span class="glyphicon glyphicon-minus gs"></span> to remove form field. </small></div>
+    <div class="panel-footer"><small>Layers and parameters are described below.</em></small></div>
+    <div class="panel-footer"><small>Dense : Activation,Units <br> Batch Normalization : Momentum,Epsilon </small></div>
+    
+    </div>
+    <div class="col-sm-3 nopadding">
+        <div class="form-group">
+            <input type="text" class="form-control" name="K_cross_val" value="" placeholder="Enter K value for cross-validation">
+        </div>
+    </div>
+    
+    <div class="col-sm-2 nopadding"> 
+        <div class="form-group">
+            <div class="input-group">
+                <select class="form-control"  name="loss">
+                    <option value="" disabled selected>Choose a loss function</option>
+                    {% if classification_model %}
+                    <option value="binary_crossentropy">Binary Crossentropy</option>
+                    <option value="categorical_crossentropy">Categorical Crossentropy</option>
+                    <option value="sparse_categorical_crossentropy">Sparse Categorical Crossentropy</option>
+                    {% endif %} 
+
+                    {% if regression_model %}
+                    <option value="mse">Mean Squared Error</option>
+                    <option value="mae">Mean Absolute Error</option>
+                    {% endif %}
+                </select>
+            </div>
+        </div>
+    </div>  
+
+    <div class="col-sm-2 nopadding"> 
+        <div class="form-group">
+            <div class="input-group">
+                <select class="form-control" name="optimizer">
+                    <option value="" disabled selected>Choose an optimizer</option>
+                    <option value="adadelta">Adadelta</option>
+                    <option value="adam">Adam</option>
+                    <option value="rmsprop">RMSProp</option>
+                    <option value="sgd">SGD</option>
+
+                </select>
+            </div>
+        </div>
+    </div>  
+
+    <input type=submit class="btn btn-primary active mt-2" value=Submit>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-latest.min.js"></script>
+<script src= "{{ url_for('static',filename='js/selectAlgo_DL.js') }}"></script>
+{% endblock %}

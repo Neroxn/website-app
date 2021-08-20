@@ -3,9 +3,11 @@ import numpy as np
 import pandas as pd
 import os
 import pickle
+import tensorflow as tf
 from numpy import arange
 from collections import OrderedDict
 from sklearn.impute import SimpleImputer
+
 
 ALLOWED_EXTENSIONS = set(['txt', 'csv'])
 
@@ -329,6 +331,9 @@ def save_user_model(model,user_id,body = "-model", method = "pickle", head = "mo
     if method == "pickle":
         filename = head + str(user_id) + body +  ".sav"
         pickle.dump(model, open(filename, 'wb'))
+    if method == "model":
+        filename = head + str(user_id) + body
+        model.save(filename)
 
 def load_user_model(user_id,body = "-model", method = "pickle",head = "models/"):
     """
@@ -344,6 +349,9 @@ def load_user_model(user_id,body = "-model", method = "pickle",head = "models/")
         filename =head + str(user_id) + body + ".sav"
         print(filename)
         return pickle.load(open(filename, 'rb'))
+    if method == "model":
+        filename = head + str(user_id) + body
+        return tf.keras.models.load_model(filename)
 
 def type_divider(df):
     """

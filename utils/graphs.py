@@ -419,7 +419,7 @@ def PCA_transformation_describe(new_df,pca):
 
     #Create the graph
     p = figure(title = "Variance Ratio", plot_width = 1200,plot_height = 800,
-    x_axis_label = "Number of components",y_axis_label = "Cumilative Ratio")
+    x_axis_label = "Number of components",y_axis_label = "Cumulative Ratio")
     
     line_y = np.cumsum(pca.explained_variance_ratio_)
     line_x = range(1,len(line_y)+1)
