@@ -6,6 +6,11 @@
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/result.css') }}">
 
+{% if graphSelected %}
+  {{ js_resources|indent(4)|safe }}
+  {{ css_resources|indent(4)|safe }}
+  {{ plot_script|indent(4)|safe }}
+{% endif %}
 
 {% endblock %}
 
@@ -18,7 +23,7 @@
   <table>
       <tr>
           {% for col in column_names %}
-          <th>{{col}}  &nbsp  </th>
+          <th>{{col}}</th>
           {% endfor %}
       </tr>
       {% for row in row_data %}
@@ -43,84 +48,68 @@
 <a class="btn btn-success mt-2" href="{{ url_for('download_csv',path = path) }}">Download test results as csv file.</a>
 
 <hr/>
-
-<div class="container mt-5">
-  <h1>Result of the cross validation.</h1>
-  <div class="row">
-      <div class="col-4">
-      <div class="list-group" id="list-tab" role="tablist">
-        {% for k in k_groups %}
-          <a class="list-group-item list-group-item-action" id="list-{{k}}-list" data-toggle="list" href="#list-{{k}}" role="tab" aria-controls="{{k}}"> Model {{k+1}}</a>
+<h2>Loss metrics:</h2>
+  <table class = "table">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        {% for parameter in parameters %}
+        <th scope="col">{{ parameter }}</th>
         {% endfor %}
-      </div>
-      </div>
-      <div class="col-8">
-      <div class="tab-content" id="nav-tabContent">
-        {% for k in k_groups %}
-          <div class="tab-pane fade" id="list-{{k}}" role="tabpanel" aria-labelledby="list-{{k}}-list">
-            <h3>Loss metrics for {{k+1}}'th model in cross-validation.</h3>
-            <table class = "table">
-              <thead>
-                <tr>
-                  <th scope="col">#Parameter</th>
-                  {% for parameter in parameters %}
-                  <th scope="col">{{ parameter }}</th>
-                  {% endfor %}
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-              {% if model_scores %}
-                <th scope = "row"> Model Scores </th>
-                  {% for model_score in model_scores[k] %}
-                    <td>{{ model_score |round(3, 'floor')  }}</td>
-                  {% endfor %}  
-              {% endif %}
-            </tr>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+    {% if model_scores %}
+      <th scope = "row"> Model Scores </th>
+        {% for model_score in model_scores %}
+          <td>{{ model_score }}</td>
+        {% endfor %}  
+    {% endif %}
+  </tr>
 
-              <tr>
-              {% if mse_errors %}
-                <th scope = "row">MSE</th>
-                  {% for mse in mse_errors[k] %}
-                    <td>{{ mse |round(3, 'floor')}}</td>
-                  {% endfor %}  
-              {% endif %}
-            </tr>
-            <tr>
-              {% if mae_errors %}
-                <th scope = "row">MAE</th>
-                {% for mae in mae_errors[k] %}
-                  <td>{{ mae |round(3, 'floor')}}</td>
-                {% endfor %}  
-              {% endif %}
-            </tr>
-            <tr>
-              {% if log_errors %}
-                <th scope = "row">Log Error</th>
-                  {% for log_error in log_errors[k] %}
-                  <td>{{ log_error |round(3, 'floor')}}</td>
-                  {% endfor %}  
-              {% endif %}
-            </tr>
-            <tr>
-              {% if f1_scores %}
-                <th scope = "row">F1 Score</th>
-                  {% for f1_score in f1_scores[k] %}
-                  <td>{{ f1_score |round(3, 'floor')}}</td>
-                  {% endfor %}  
-              {% endif %}
-            </tr>
-          </tbody>
-          </table>
-          </div>
-        {% endfor %}
-
-      </div>
-      </div>
-  </div>
+    <tr>
+    {% if mse_errors %}
+      <th scope = "row">MSE</th>
+        {% for mse in mse_errors %}
+          <td>{{ mse }}</td>
+        {% endfor %}  
+    {% endif %}
+  </tr>
+  <tr>
+    {% if mae_errors %}
+      <th scope = "row">MAE</th>
+      {% for mae in mae_errors %}
+        <td>{{ mae }}</td>
+      {% endfor %}  
+    {% endif %}
+  </tr>
+  <tr>
+    {% if log_errors %}
+      <th scope = "row">Log Error</th>
+        {% for log_error in log_errors %}
+        <td>{{ log_error }}</td>
+        {% endfor %}  
+    {% endif %}
+  </tr>
+  <tr>
+    {% if f1_scores %}
+      <th scope = "row">F1 Score</th>
+        {% for f1_score in f1_scores %}
+        <td>{{ f1_score }}</td>
+        {% endfor %}  
+    {% endif %}
+  </tr>
+</tbody>
+</table>
+<div class="container mt-3">
+  {% if graphSelected %}
+    <hr/>
+    <div style="display: flex; justify-content: center;">
+      {{ plot_div|indent(4)|safe }}
+    </div>
+  {% endif %}
 </div>
-
-
 {% endblock %}
 
 {% block scripts %}

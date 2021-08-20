@@ -1,19 +1,15 @@
 import numpy as np
 import pandas as pd
-from sklearn.metrics import classification
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression,LogisticRegression,ElasticNet
 from sklearn.svm import SVR,SVC
-from sklearn.utils import shuffle
 from sklearn.multioutput import MultiOutputRegressor,MultiOutputClassifier
-from sklearn.base import clone
 from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, RandomForestClassifier, AdaBoostClassifier
 from werkzeug.utils import redirect
 from .transformers import object_encode, standard_scale
 from utils import save_user_model,check_float
-from utils.transformers import calculate_model_score
 from flask import flash, url_for, session
-import tensorflow as tf
+
 
 
 def create_SVR(selected_parameters):
@@ -137,11 +133,10 @@ def create_RandomForestRegressor(selected_parameters):
     max_depth = None if check_float(selected_parameters.get('max_depth')) == False else int(selected_parameters.get('max_depth'))
     min_samples_split = 2 if check_float(selected_parameters.get('min_samples_split')) == False else int(selected_parameters.get('min_samples_split'))
     min_samples_leaf = 1 if check_float(selected_parameters.get('min_samples_leaf')) == False else int(selected_parameters.get('min_samples_leaf'))
-    
     if n_estimators < 0:
         n_estimators = 100
         flash("Negative n_estimator value is changed to its default value")
-    if max_depth and max_depth < 0:
+    if max_depth < 0:
         max_depth = None
         flash("Negative max_depth value is changed to its default value")
     if min_samples_split < 0:
@@ -174,7 +169,7 @@ def create_RandomForestClassifier(selected_parameters):
     if n_estimators < 0:
         n_estimators = 100
         flash("Negative n_estimator value is changed to its default value")
-    if max_depth and max_depth < 0:
+    if max_depth < 0:
         max_depth = None
         flash("Negative max_depth value is changed to its default value")
     if min_samples_split < 0:
@@ -200,7 +195,7 @@ def create_AdaBoostRegressor(selected_parameters):
     :model: -- model that is created
     """
     n_estimators =50 if check_float(selected_parameters.get('n_estimators')) == False else int(selected_parameters.get('n_estimators'))
-    learning_rate = 1.0 if check_float(selected_parameters.get('learning_rate')) == False else float(selected_parameters.get('learning_rate'))
+    learning_rate = 1.0 if check_float(selected_parameters.get('n_estimators')) == False else float(selected_parameters.get('learning_rate'))
     model = AdaBoostRegressor(n_estimators=n_estimators, learning_rate=learning_rate)
     
     if n_estimators < 0:
@@ -214,7 +209,7 @@ def create_AdaBoostRegressor(selected_parameters):
 
 def create_AdaBoostClassifier(selected_parameters):
     """
-    Create a AdaBoost model for classification 
+    Create a AdaBoost model for classification
 
     << Parameters
     :selected_parameters: -- parameters that is selected to construct the model
@@ -223,7 +218,7 @@ def create_AdaBoostClassifier(selected_parameters):
     :model: -- model that is created
     """
     n_estimators =50 if check_float(selected_parameters.get('n_estimators')) == False else int(selected_parameters.get('n_estimators'))
-    learning_rate = 1.0 if check_float(selected_parameters.get('learning_rate')) == False else float(selected_parameters.get('learning_rate'))
+    learning_rate = 1.0 if check_float(selected_parameters.get('n_estimators')) == False else float(selected_parameters.get('learning_rate'))
     
     if n_estimators < 0:
         n_estimators = 50
@@ -237,36 +232,17 @@ def create_AdaBoostClassifier(selected_parameters):
     return MultiOutputClassifier(model)
     
 
-def get_layer(information_dict):
+def create_CNN(selected_parameters):
     """
-    Construct a layer and return that layer for creating a model.
-    :information_dict: -- dictionary that holds information for layers
+    Create a CNN (Convulational Neural Network) model --
+
+    << Parameters
+    :selected_parameters: -- parameters that is selected to construct the model
+
+    >> Returns
+    :model: -- model that is created
     """
-    layer_name = information_dict["layer_name"]
-    if layer_name == "Dense": # create dense layer
-        layer_size = information_dict["units"]
-        layer_activation = information_dict["activation"]
-        layer = tf.keras.layers.Dense(layer_size,layer_activation)
-
-    elif layer_name == "Dropout": # create dropout layer
-        rate = information_dict["ratio"]
-        layer = tf.keras.layers.Dropout(rate)
-
-    elif layer_name == "BatchNorm": # create batch normalization layer
-        momentum = information_dict["momentum"]
-        epsilon = information_dict["epsilon"]
-        layer = tf.keras.layers.BatchNormalization(momentum=momentum, epsilon=epsilon)
-        
-    elif layer_name == "LSTM":
-        units = information_dict["units"]
-        activation = information_dict["activation"]
-        layer = tf.keras.layers.LSTM(units = units, activation = activation)
-
-    else:
-        flash("An error occured while constructing layers!")
-        return None # redirect
-
-    return layer
+    return None
 
 def create_RNN(selected_parameters):
     """
@@ -278,43 +254,19 @@ def create_RNN(selected_parameters):
     >> Returns
     :model: -- model that is created
     """
-    # TODO : Using @selected_parameters, initialize a set of layers.
-    # TODO : Create a function that takes these parameters and outputs a model by constructing them.
     return None
 
-def create_DNN(seleced_parameters, model_configurations, final_activation = "linear"):
+def create_DNN(seleced_parameters):
     """
     Create a DNN (Deep Neural Network) model --
 
     << Parameters
-    :selected_parameters: -- layers that is selected to construct the model
-        >@selected_parameters is in the format of list of dictionary 
-        (number of )
-    :model_configurations: -- general parameters (loss, optimizer, etc) for the model
-    :final_activation: -- the final activation function for the final layer
+    :selected_parameters: -- parameters that is selected to construct the model
+
     >> Returns
     :model: -- model that is created
     """
-
-    input_size = len(session.get('selected_x'))
-    type_of_model = model_type(session.get("selected_model"))
-    output_size = len(session.get("selected_y")) # --> else no of unique values.
-
-    model = tf.keras.Sequential() # base model 
-    model.add(tf.keras.Input(shape  = input_size))
-
-    for layer_info in seleced_parameters: # user defined layers
-        model.add(get_layer(layer_info))
-    
-    # output layer, if regression output linear else softmax
-    model.add(tf.keras.layers.Dense(output_size, activation = final_activation))
-    
-    # general configurations
-    optimizer = model_configurations["optimizer"]
-    loss = model_configurations["loss"]
-    metrics = model_configurations["metrics"]
-    model.compile(optimizer = optimizer, loss = loss, metrics=metrics)
-    return model
+    return None 
 
 
 def model_type(selected_model):
@@ -326,73 +278,23 @@ def model_type(selected_model):
     >> Returns
     :modelType: -- "regression", "classification" or "both", else return flash
     """
-    # might resolve some errors
-    
     modelType = None
-    regression_tasks = ["SVR","LinearRegression","RandomForestRegressor","AdaBoostRegressor","DNN_R"]
-    classification_tasks = ["SVC","LogisticRegression","RandomForestClassifier","AdaBoostClassifier","DNN_C"]
+    regression_tasks = ["SVR","LinearRegression","RandomForestRegressor","AdaBoostRegressor"]
+    classification_tasks = ["SVC","LogisticRegression","RandomForestClassifier","AdaBoostClassifier"]
+    mixed_tasks = []
 
     if selected_model in regression_tasks:
         modelType = "regression"
 
     elif selected_model in classification_tasks:
         modelType = "classification"
+
+    elif selected_model in mixed_tasks:
+        modelType = "both"
+
     else:
         flash("An error occured. Please contact the admins!")
     return modelType
-
-def cross_validate_models(X,y,model,K, isDNN = False, **kwargs):
-    """
-    Use cross validation using the constructed model.
-
-    Return:
-    :models: -- trained models
-    :model_scores: -- list that holds dictionary for each model with loss scores on test data
-    """
-    # calculate the sizes for test and train
-    if isDNN:
-        untrained_model = tf.keras.models.clone_model(model)
-    else:
-        untrained_model = clone(model)
-    full_size = X.shape[0]
-    test_size = int(full_size/K) 
-    type_of_model = model_type(session.get("selected_model"))
-    models = []
-    model_scores = []
-    for k in range(K):
-        # shuffle the rows
-        concatted_shuffled = shuffle(pd.concat([X,y],axis = 1))
-        X = concatted_shuffled[session.get("selected_x")]
-        y = concatted_shuffled[session.get("selected_y")]
-        
-        # partition the data
-        X_test,y_test = X.iloc[:test_size,:],y.iloc[:test_size,:]
-        X_train,y_train = X.iloc[test_size:,:],y.iloc[test_size:,:]
-
-        # train the model
-        print("Model will be trained!",y_train.head())
-        if isDNN:
-            model = train_DNN(model,X_train,y_train, epochs= kwargs["epochs"], batch_size = kwargs["batch_size"],
-            callbacks = kwargs["callbacks"])
-        else:
-            model = train_model(model,X_train,y_train)
-        print("Model trained!")
-
-        model_score,test_predictions = calculate_model_score(model,X_test.copy(),y_test.copy(), type_of_model = type_of_model) # calculate model scores that are useful
-        #print(test_predictions)
-        # append result to list
-        models += [model]
-        model_scores += [model_score]
-
-        # reset back to default model
-        if isDNN:
-            model = tf.keras.models.clone_model(untrained_model)
-            model.compile(loss = kwargs["loss"], metrics = kwargs["metrics"], optimizer = kwargs["optimizer"])
-        else:
-            model = clone(untrained_model)
-
-
-    return model_scores,models,test_predictions
 
 def preprocess_for_model(selected_model,X,y):
     """
@@ -422,6 +324,9 @@ def preprocess_for_model(selected_model,X,y):
         scaled_data_y,scaler_y = standard_scale(y.select_dtypes(include = "number"))
         session["numerical_y"] = [col for col in y.select_dtypes(include = "number").columns]
     
+
+
+
     encoded_data_X,encoder_X = object_encode(X.select_dtypes(include = "object"))
     session["object_X"] = [col for col in X.select_dtypes(include = "object").columns]
 
@@ -490,11 +395,6 @@ def fetch_model(selected_model,selected_parameters):
     elif selected_model == "AdaBoostClassifier":
         return create_AdaBoostClassifier(selected_parameters)
 
-    elif selected_model == "RNN":
-        return create_RNN(selected_parameters)
-
-    elif selected_model == "DNN":
-        return create_DNN(selected_parameters)
 
 def train_model(model,train_X, train_y):
     """
@@ -507,28 +407,14 @@ def train_model(model,train_X, train_y):
     >> Returns
     :model: -- model that is trained
     """
+    #try:
+    #    model.fit(train_X,train_y)
+    #except:
+    #    flash("An error has occured while training!")
+    #    return redirect(url_for("selectAlgo"))
     model.fit(train_X,train_y)
     return model
 
-def train_DNN(model,train_X,train_y, epochs = 30, batch_size = 32,callbacks = []):
-    """
-    Train the model with train_X and train_y
-    << Parameters
-    :model: -- model that is created and ready for getting input
-    :train_X: -- the X that is preprocessed and ready for training the model
-    :train_Y: -- the y that is preprocessed and ready for training the model
-
-    >> Returns
-    :model: -- model that is trained
-    """
-    model.fit(train_X,train_y, epochs = epochs,
-    callbacks = callbacks, batch_size = batch_size)
-    return model
-
-################################################################################################################################
-# TODO : Function for fitting neural networks                                                                                  #
-# TODO : If RNN, assume that there is a ID column so that we can use group_by. Also assume that Date/Sequential data is sorted.#                                                                                    #
-################################################################################################################################
 def test_model(model, test_X):
     """
     Test the model with test_X and test_y

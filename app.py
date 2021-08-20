@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 
 from utils.auth import bp
 from utils.graphs import PCA_transformation,PCA_transformation_describe,correlation_plot,pie_plot,bar_plot,scatter_matrix,dist_plot,confusion_matrix_plot
-from utils.model_train import create_DNN, preprocess_for_model,fetch_model, train_DNN,train_model,model_type,test_model,cross_validate_models
+from utils.model_train import preprocess_for_model,fetch_model,train_model,model_type,test_model
 from utils.transformers import apply_model_transformers,revert_model_transformers,get_metrics,combine_columns
 from utils.workspace import *
 from utils import *
@@ -15,7 +15,6 @@ from utils import *
 from bokeh.resources import INLINE
 from bokeh.embed import components
 
-from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 import datetime
 
@@ -276,33 +275,7 @@ def create_app(test_config = None):
         else:
             dtypes = []
             cols = []
-        return render_template("select_y_variable.html",types = dtypes, columns = cols)
-
-    @app.route('/current_data', methods = ["GET","POST"])
-    def current_data():
-        """
-        Show the dataframe currently being used. 
-        """
-        df = load_temp_dataframe(session.get("user_id"))
-        selected_model = session.get('selected_model')
-        save_temp_dataframe(df,session.get('user_id'),method = "csv") # this will slow down the process
-        if not session.get("selected_y"):
-            session["selected_y"] = []  
-
-        if not session.get("selected_x"):
-            session["selected_x"] = []
-            
-        if request.method == "POST":
-            number_of_head = request.form.get('head_number')
-            number_of_head =  5 if check_float(number_of_head) == False else int(number_of_head) # number of rows to be displayed for the data
-            return render_template("current_data.html", column_names=df.columns.values, row_data=list(df.head(number_of_head).values.tolist()),
-                    link_column="Patient ID", zip=zip, rowS = df.shape[0], colS = df.shape[1],selected_model = selected_model,
-                    selected_x = np.sort(session.get('selected_x')), selected_y = np.sort(session.get('selected_y')),path = "temp/" + str(session.get('user_id')) + '-df-temp' + ".csv")
-        
-        return render_template("current_data.html", column_names=df.columns.values, row_data=list(df.head(5).values.tolist()),
-                            link_column="Patient ID", zip=zip, rowS = df.shape[0], colS = df.shape[1],selected_model = selected_model,
-                            selected_x = np.sort(session.get('selected_x')), selected_y = np.sort(session.get('selected_y')),path = "temp/" + str(session.get('user_id')) + '-df-temp' + ".csv")
-
+        return render_template("select_variables.html",types = dtypes, columns = cols)
 
     @app.route("/selectAlgo",methods = ["GET","POST"])
     def selectAlgo():
@@ -335,7 +308,7 @@ def create_app(test_config = None):
             flash("A NaN value has been detected in the dataset! Please remove them to continue.List of features that has NaN values: {}".format(has_NaN_value))
 
         regression_model,classification_model = model_chooser(df,session.get("selected_y")) 
-
+      
         if request.method == "POST" and nan_found == False and parameter_selected == True: # everything is fine, create and train the model
             # get the X and y part of the data
             df_X = df[session.get("selected_x")]
@@ -347,7 +320,6 @@ def create_app(test_config = None):
             # preprocess the data
             selected_parameters = request.form
             df_X,df_y = preprocess_for_model(selected_model,df_X,df_y) # apply preprocess that is needed for particular model
-            print("Preprocess success!",df_y.head())
             if model_type(selected_model) == "classification": # task is a classification task
                 one_class_columns = [col for col in df_y.columns if df_y[col].nunique() < 2]
                 if len(one_class_columns) != 0: # if there is only one value for a discrete variable that will be predicted, flash a warning
@@ -358,162 +330,92 @@ def create_app(test_config = None):
             # create the model
             model = fetch_model(selected_model,selected_parameters) # create model with given parameters
 
-            K = 5 if check_float(selected_parameters.get("K")) == False or selected_parameters.get("K") == "" else int(selected_parameters.get("K"))
-            
-            model_scores,models,(test_y_rescaled,pred_y_rescaled) = cross_validate_models(df_X,df_y,model,K)
-            best_model = models[-1] # choose the best model, will be changed later
-            print(model_scores)
+            # split and train the model
+            train_X, test_X, train_y, test_y = train_test_split(df_X,df_y,train_size = 0.80) # split the dataframe
+            model = train_model(model,train_X,train_y) # train the model 
             session["selected_x_trained"] = session.get('selected_x')
             session["selected_y_trained"] = session.get('selected_y')
-            session["model_scores"] = model_scores  # a small price 
-            session["k_cross_val"] = K
-
-            # convert arrays to df and concat results
             
-            save_temp_dataframe(pd.concat([test_y_rescaled,pred_y_rescaled],axis = 1),session.get("user_id"), body = "-test-dataframe")
-                        
-            save_user_model(best_model,session.get("user_id"),body = "-user-model")
+            # save the model and redirect to the result page to display the performance of our model on test set
+            save_user_model(model,session.get("user_id"),body = "-user-model")
+            save_temp_dataframe(pd.concat([test_X,test_y],axis = 1),session.get("user_id"), body = "-test-dataframe")
             return redirect(url_for("result"))
-            #return "Success!"
+
         return render_template("select_algo.html",regression_model = regression_model, 
         classification_model = classification_model,more_than_one = len(session.get('selected_y')) > 1)
 
-    ###############################################################
-    # TODO : Create a different webpage for training Neural Nets. #
-    ###############################################################
-
-    @app.route("/selectAlgo/DL", methods = ["GET","POST"])
-    def selectAlgo_DL():
+    @app.route('/current_data', methods = ["GET","POST"])
+    def current_data():
         """
-        Select the algorithm/model user will use. Make sure that parameters are selected and there is no NaN value
-        in the data - as it will hinder the training of our model.
+        Show the dataframe currently being used. 
         """
-        
         df = load_temp_dataframe(session.get("user_id"))
-        nan_found = False
-        parameter_selected = True
-        
-        # check if selected_x is selected, if it is not, flash a warning
-        if not session.get("selected_x") or len(session.get("selected_x")) == 0:
+        selected_model = session.get('selected_model')
+        save_temp_dataframe(df,session.get('user_id'),method = "csv") # this will slow down the process
+        if not session.get("selected_y"):
+            session["selected_y"] = []  
+
+        if not session.get("selected_x"):
             session["selected_x"] = []
-            parameter_selected = False
-            flash("No parameter for training is selected! Please select one to continue.")
-            return redirect(url_for("select_variables"))
-
-        # check if selected_y is selected, if it is not, flash a warning
-        if not session.get("selected_y") or len(session.get("selected_y")) == 0:
-            session["selected_y"] = []
-            parameter_selected = False
-            flash("No parameter for prediction is selected! Please select one to continue.")
-            return redirect(url_for("select_y"))
-
-        # check the NaN values, if found any, flash a warning.
-        has_NaN_value = [col for col in df.columns if df[col].isnull().any()]
-        if len(has_NaN_value) > 0:
-            nan_found = True
-            flash("A NaN value has been detected in the dataset! Please remove them to continue.List of features that has NaN values: {}".format(has_NaN_value))
-
-        regression_model,classification_model = model_chooser(df,session.get("selected_y")) 
-        if request.method == "POST" and nan_found == False and parameter_selected == True: # everything is fine, create and train the model
-            # get the X and y part of the data
-            df_X = df[session.get("selected_x")]
-            df_y = df[session.get("selected_y")]
-
-            selected_model = "DNN"
-            if regression_model and not classification_model:
-                selected_model = selected_model + "_R" # regression DNN
-            elif classification_model and not regression_model:
-                selected_model = selected_model + "_C" # classification DNN
-            else:
-                # TODO : Determine from loss function if there is a conflict
-                raise NotImplementedError
             
-            session["selected_model"] = selected_model
+        if request.method == "POST":
+            number_of_head = request.form.get('head_number')
+            number_of_head =  5 if check_float(number_of_head) == False else int(number_of_head) # number of rows to be displayed for the data
+            return render_template("current_data.html", column_names=df.columns.values, row_data=list(df.head(number_of_head).values.tolist()),
+                    link_column="Patient ID", zip=zip, rowS = df.shape[0], colS = df.shape[1],selected_model = selected_model,
+                    selected_x = np.sort(session.get('selected_x')), selected_y = np.sort(session.get('selected_y')),path = "temp/" + str(session.get('user_id')) + '-df-temp' + ".csv")
+        
+        return render_template("current_data.html", column_names=df.columns.values, row_data=list(df.head(5).values.tolist()),
+                            link_column="Patient ID", zip=zip, rowS = df.shape[0], colS = df.shape[1],selected_model = selected_model,
+                            selected_x = np.sort(session.get('selected_x')), selected_y = np.sort(session.get('selected_y')),path = "temp/" + str(session.get('user_id')) + '-df-temp' + ".csv")
 
-            # preprocess the data
-            # TODO : Preprocess of classification should be related to their loss function!
-            # Categorical -> one hot
-            # Sparse -> encoder
 
-            df_X,df_y = preprocess_for_model(selected_model,df_X,df_y) # apply preprocess that is needed for particular model
-            if model_type(selected_model) == "classification": # task is a classification task
-                one_class_columns = [col for col in df_y.columns if df_y[col].nunique() < 2]
-                if len(one_class_columns) != 0: # if there is only one value for a discrete variable that will be predicted, flash a warning
-                    flash("Some of the data we are trying to predict has only one class! Please remove such classes to continue: {}".format(one_class_columns))
-                    return render_template("selectAlgo_DL.html",regression_model = regression_model,
-                                           classification_model = classification_model,more_than_one = len(session.get('selected_y')) > 1)
-                if len(session.get("selected_y")) != 1:
-                    flash("For classification task, only choose one variable for predicting")
-                    return render_template("selectAlgo_DL.html",regression_model = regression_model,
-                                        classification_model = classification_model,more_than_one = len(session.get('selected_y')) > 1)
-            ALL_KEYS = ["layer-selection","activation[]","units[]","ratio[]","momentum[]","epsilon[]"]
-
-            # this is not a good idea. could be fixed later
-            layer_list = request.form.getlist(ALL_KEYS[0])
-            activation_list = request.form.getlist(ALL_KEYS[1])
-            units_list = request.form.getlist(ALL_KEYS[2])
-            ratio_list = request.form.getlist(ALL_KEYS[3])
-            momentum_list = request.form.getlist(ALL_KEYS[4])
-            epsilon_list = request.form.getlist(ALL_KEYS[5])
-
-            parameters_list = []
-            for index in range(len(layer_list)): # set parameter_list to construct layers
-                units_int = 32 if check_float(units_list[index]) == False else int(units_list[index])
-                momentum = 0.99 if check_float(momentum_list[index]) == False else float(momentum_list[index])
-                epsilon = 0.001 if check_float(epsilon_list[index]) == False else float(epsilon_list[index])
-                ratio =0.25 if check_float(ratio_list[index]) == False else float(ratio_list[index])
-
-                parameter_list = {"layer_name" : layer_list[index], "units" : units_int, "activation" : activation_list[index],
-                 "momentum" : momentum, "epsilon" : epsilon, "ratio" : ratio}
-                parameters_list += [parameter_list]
-            
-            # create model
-            # TODO : model_configs should be inputted from the users
-            model_configurations = {"optimizer" : request.form.get("optimizer") , "loss" : request.form.get("loss") , "metrics" : ["mse"]}
-            model = create_DNN(parameters_list, model_configurations)
-            model.summary()
-
-            # train the model
-            K = 5
-            model_scores,models,(test_y_rescaled,pred_y_rescaled) = cross_validate_models(df_X,df_y,model,K, isDNN = True,
-            epochs = 5, batch_size = 32, callbacks = [], optimizer = model_configurations["optimizer"], 
-            loss = model_configurations["loss"], metrics = model_configurations["metrics"])
-
-            best_model = models[-1]
-            print(best_model)
-            session["selected_x_trained"] = session.get('selected_x')
-            session["selected_y_trained"] = session.get('selected_y')
-            
-            save_temp_dataframe(pd.concat([test_y_rescaled,pred_y_rescaled],axis = 1),session.get("user_id"), body = "-test-dataframe")
-            save_user_model(best_model,session.get("user_id"),body = "-user-model", method = "model")
-            return redirect(url_for("result"))
-            #return "Success!"
-        return render_template("selectAlgo_DL.html", regression_model = regression_model, classification_model = classification_model)
-    
     @app.route('/result')
     def result():
         """
         Show the result of the model that is trained with the test set. Metrics are shown according to the type of the models' task,
         whether it is a classification or a regression task.
         """
-        
         if session.get("selected_model") == None:
             flash("No model has been trained!")
             return redirect(url_for("selectAlgo"))
 
         # load required models/dataframes
-        result_dataframe = load_temp_dataframe(session.get('user_id'),body = "-test-dataframe")
         type_of_model = model_type(session.get("selected_model"))
-        model_scores,mse_errors,mae_errors,f1_scores,log_errors = [],[],[],[],[]
-        for score in session.get('model_scores'): # update list of scores for displaying
-            model_scores += [score["model_scores"]] if score["model_scores"] != [] else [] # this is necessary and prevents empty rows
-            mse_errors += [score["mse_errors"]] if score["mse_errors"] != [] else []
-            mae_errors += [score["mae_errors"]] if score["mae_errors"] != [] else []
-            f1_scores += [score["f1_scores"]] if score["f1_scores"] != [] else []
-            log_errors += [score["log_errors"]] if score["log_errors"] != [] else []
+        model = load_user_model(session.get('user_id'),body = "-user-model")
+        test_dataframe = load_temp_dataframe(session.get('user_id'),body = "-test-dataframe")
+        test_X,test_y = test_dataframe[session.get("selected_x_trained")].copy(),test_dataframe[session.get("selected_y_trained")].copy()
+        predicted_y = pd.DataFrame(test_model(model,test_X),columns = test_y.columns)
+        predicted_y.set_index([test_y.index],inplace=True) # match indexes
 
+        # prepare result dataframe
+        if type_of_model == "regression":
+            # revert results before calculating metrics. Transformers are used in preprocessing the data.
+            _,test_y = revert_model_transformers(test_X,test_y)
+            _,predicted_y = revert_model_transformers(test_X,predicted_y)
+            
+            # change column names for readability
+            predicted_y.columns = ["predicted_" + col for col in test_y.columns]
+            test_y.columns = ["actual_" + col for col in test_y.columns]
+            result_dataframe = pd.concat([test_y,predicted_y],axis=1)   
+            
+            # calculate the metrics that will be displayed
+            model_scores,mse_errors,mae_errors,log_errors,f1_scores = get_metrics(type_of_model,test_y,predicted_y)
+        
+        else:
+            # calculate the metrics that will be displayed
+            model_scores,mse_errors,mae_errors,log_errors,f1_scores = get_metrics(type_of_model,test_y,predicted_y)
+            
+            # revert results before calculating metrics. Transformers are used in preprocessing the data.
+            _,test_y = revert_model_transformers(test_X,test_y)
+            _,predicted_y = revert_model_transformers(test_X,predicted_y)
+            
+            # create a confusion matrix and change column names for readability
+            script,div = confusion_matrix_plot(test_y,predicted_y)
+            predicted_y.columns = ["predicted_" + col for col in test_y.columns]
+            test_y.columns = ["actual_" + col for col in test_y.columns]
+            result_dataframe = pd.concat([test_y,predicted_y],axis=1)  
 
-        print(model_scores,mse_errors,mae_errors,f1_scores,log_errors)
         save_temp_dataframe(result_dataframe,session.get('user_id'),body = "-result-dataframe", method = "csv")
         path = "temp/" + str(session.get('user_id')) + '-result-dataframe' + ".csv"
 
@@ -522,15 +424,14 @@ def create_app(test_config = None):
             f1_scores = f1_scores, log_errors = log_errors,
             column_names=result_dataframe.columns.values, row_data=list(result_dataframe.head(10).values.tolist()),
             link_column="Patient ID", zip=zip, rowS = result_dataframe.shape[0], colS = result_dataframe.shape[1],
-            path = path, plot_script=[],plot_div=[],js_resources=INLINE.render_js(),css_resources=INLINE.render_css(),graphSelected = True,
-            parameters = session.get("selected_y_trained"), k_groups = range(session.get("k_cross_val")))
-            
+            path = path, plot_script=script,plot_div=div,js_resources=INLINE.render_js(),css_resources=INLINE.render_css(),graphSelected = True,
+            parameters = session.get("selected_y_trained"))
         else: # if our task is regression
             return render_template("result.html",model_scores = model_scores,mse_errors = mse_errors,mae_errors = mae_errors,
             f1_scores = f1_scores, log_errors = log_errors,
             column_names=result_dataframe.columns.values, row_data=list(result_dataframe.head(10).values.tolist()),
             link_column="Patient ID", zip=zip, rowS = result_dataframe.shape[0], colS = result_dataframe.shape[1],
-            path = path,graphSelected = False,parameters = session.get("selected_y_trained"), k_groups = range(session.get("k_cross_val")))
+            path = path,graphSelected = False,parameters = session.get("selected_y_trained"))
 
     @app.route('/result/uploaded', methods = ["GET","POST"])
     def result_uploaded():
@@ -542,18 +443,10 @@ def create_app(test_config = None):
             return redirect(url_for("selectAlgo"))
 
         # load required models/dataframes
-        #################################################################################
-        # TODO : Only the best model should be used in here.                            #
-        # If there is a y provided, instead of getting rid of it, calculate the errors. #
-        #################################################################################
         test_dataframe = load_temp_dataframe(session.get('user_id'),body = "-test-dataframe")
         test_dataframe = test_dataframe[session.get('selected_x_trained')]
         type_of_model = model_type(session.get("selected_model"))
-        if session.get("selected_model") in ["DNN_R","DNN_C"]:
-            method = "model"
-        else:
-            method = "pickle"
-        model = load_user_model(session.get('user_id'),body = "-user-model", method = method)
+        model = load_user_model(session.get('user_id'),body = "-user-model")
         if request.method == "POST":
             df = load_(app.config['UPLOAD_FOLDER'],request.files) # load a local file uploaded from the user
             df.drop(session.get('selected_y_trained'), inplace = True, axis = 1) # drop the 'y' features if exist
