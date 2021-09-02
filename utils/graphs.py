@@ -123,7 +123,7 @@ def correlation_plot(df,selected_parameters):
 
     p.add_layout(color_bar, 'right')
 
-    path = "temp/" + str(session.get('user_id')) + "-temp.csv"
+    path = os.path.join("temp",str(session.get('user_id')) + "-temp.csv")
     data_corr.to_csv(path)
 
     script, div = components(p)
@@ -200,7 +200,7 @@ def pie_plot(data,selected_parameter, sort_by_values = False, top_values = 255):
             fill_color = 'color',
             source=df_pie_agg)
 
-    path = "temp/" + str(session.get('user_id')) + "-temp.csv"
+    path = os.path.join("temp",str(session.get('user_id')) + "-temp.csv")
 
     df_pie_agg.to_csv(path)
     script, div = components(p)
@@ -237,7 +237,7 @@ def dist_plot(df,parameter,bins = 20):
     p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], line_color='white', fill_color='black')
 
 
-    path = "temp/" + str(session.get('user_id')) + "temp.csv"
+    path = os.path.join("temp",str(session.get('user_id')) + "-temp.csv")
     pd.DataFrame(np.c_[hist,edges[:-1]],columns = ["hist","edges"]).to_csv(path)
 
     script, div = components(p)
@@ -347,7 +347,7 @@ def bar_plot(data,selected_parameter, option = 'Vertical'):
     p.xaxis.major_label_orientation = 1.57
     script, div = components(p)
 
-    path = "temp/" + str(session.get('user_id')) + "-temp.csv"
+    path = os.path.join("temp",str(session.get('user_id')) + "-temp.csv")
     df_pie_agg.to_csv(path)
     
     return render_template(

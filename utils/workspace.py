@@ -51,7 +51,7 @@ def create_workspace(user_id, df):
     """
     db = get_db()
     loc = None
-    
+    last_workspace_id = 0
 
     #Check user exists
     #if db.execute('SELECT username FROM user WHERE user_id = ?', (user_id,)).fetchone() is None:
@@ -68,6 +68,7 @@ def create_workspace(user_id, df):
                 (user_id, 0, (str(user_id) + '_0_0.csv'), (str(user_id) + '_0_0.csv'), 'INITIALIZE')
             )
         loc = (str(user_id) + '_0_0.csv')
+        last_workspace_id = -1
     else:
         last_workspace_id = query[0]
         db.execute(
@@ -79,7 +80,7 @@ def create_workspace(user_id, df):
     
     db.commit()
     df.to_csv(('./csv/' + loc), index=False)
-    return
+    return last_workspace_id+1
 
 def delete_workspace(user_id, workspace_id):
     """

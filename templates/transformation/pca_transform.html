@@ -17,19 +17,32 @@
 {% block page_content %}
 <form action="" method = "post" enctype="multipart/form-data">
     <div class = "container mt-5">
-      <h1>Enter the parameters for PCA transformation.</h1>
+      <div class="container d-flex h-100">
+        <div class="row justify-content-center align-self-center">
+        <h1 class="display-4">Enter the parameters for PCA transformation.
+        </h1>
+        </div>
+      </div>
+      <hr/>
 		<div class = "form-group">
-    		    <label class="form-check-label" >Reduced dimension (number of components after transformation)</label>  
-            <input type="text" class="form-control" name="n_component"> 
-   			<label class="form-check-label" >Variance ratio (not required)</label>
-            <input type="text" class="form-control" name="variance_ratio">
+    		    <label class="form-check-label" >Reduced dimension</label>  
+            <input type="text" class="form-control" name="n_component" placeholder="Ignored if variance ratio is given"> 
+   			<label class="form-check-label" >Variance ratio</label>
+            <input type="text" class="form-control" name="variance_ratio" placeholder="Between 0 and 1">
       	</div>
-      <input type="submit" class="btn btn-primary active" value="submit">
+      
+<input type="submit" class="btn btn-primary btn-lg btn-block active" value="Submit">
 	</div>
 </form>
 
 {% if graphSelected %}
-<h1 style="text-align: center; margin-bottom: 40px;"> Cumulative Variance </h1>
+<div class="container d-flex h-100">
+  <div class="row justify-content-center align-self-center">
+  <h1 class="display-4">Cumulative ratio vs dimension graph
+  </h1>
+  </div>
+</div>
+<hr/>
 <div style="display: flex; justify-content: center;">
     {{ plot_div|indent(4)|safe }}
 </div>

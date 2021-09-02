@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %} {% endblock %}
+
+{% block head %}
+{{ super() }}
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/navbar.css') }}">
+{% endblock %}
+
+
+{% block page_content %}
+<form action="" method = "post" enctype="multipart/form-data">
+{% for unknown_type in unknown_types %} 
+<div class="container mt-3"> 
+    <div class="form-group">
+        <div class="input-group">
+            <select class="form-control" name="{{ unknown_type }}">
+                <option value="" disabled selected> Unknown type: {{ unknown_type }}</option>
+                {% for datatype in dataset %}
+                <option value="{{ datatype }}">{{ datatype }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>  
+{% endfor %}
+{% for unknown_column in unknown_columns %} 
+<div class="container mt-3"> 
+    <div class="form-group">
+        <div class="input-group">
+            <select class="form-control" name="{{ unknown_column }}">
+                <option value="" disabled selected> Unknown column : {{ unknown_column }}</option>
+                {% for datatype in dataset %}
+                <option value="{{ datatype }}">{{ datatype }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>  
+{% endfor %}
+<div class="container mt-3">
+    <div class="form-group">
+        <input type=submit class="btn btn-primary btn-lg btn-block" value=Submit>
+    </div>
+</div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}
+

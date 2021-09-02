@@ -91,6 +91,6 @@ def logout():
     Logout the user from the session. Clear the files and session belonging to the user.
     """
     remove_temp_files(session.get("user_id"))
-    remove_temp_files(session.get("user_id"),head = "models/")
+    remove_temp_files(session.get("user_id"),head = "models")
     session.clear()
     return redirect(url_for('auth.login'))

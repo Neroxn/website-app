@@ -11,6 +11,14 @@
 
 
 {% block page_content %}
+
+<div class="container d-flex h-100">
+    <div class="row justify-content-center align-self-center">
+		<h1 class="display-4">Login</h1>
+    </div>
+</div>
+<hr/>
+
 <div class="container mt-5">
 	<div class="form-group">
 		<form method="post">
@@ -18,7 +26,8 @@
             <input type ="username" class="form-control" name="username" id="username" placeholder= "Enter username" required>
             <label for="password">Password:</label>
             <input type="password" class="form-control" name="password" placeholder="Enter password" id="password" required>
-            <input type="submit" class="btn btn-primary active" value="Log In">
+            
+<input type="submit" class="btn btn-primary btn-lg btn-block active" value="Login">
             <a class="btn btn-link" href="{{ url_for('auth.register') }}">Register</a>
 		</form>
 	</div>
