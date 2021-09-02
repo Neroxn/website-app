@@ -10,9 +10,70 @@
 {% endblock %}
 
 {% block page_content %}
-<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
-<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
-<!------ Include the above in your HEAD tag ---------->
+
+<div class = "container mt-5"></div>
+<div class="container d-flex h-100">
+    <div class="row justify-content-center align-self-center">
+		<h1 class="display-4">Build your deep-learning model</h1>
+        <h3>
+            Required layers parameters for creating a neural network model.
+          </h3>
+        <dl class="row">
+          
+            <dt class="col-sm-3">Dense Layer</dt>
+            <dd class="col-sm-9">
+                <p>Just your regular densely-connected neural network layer.</p>
+                <ul class="list-group-flush">
+                    <li>Units : Positive integer, dimensionality of the output space</li>
+                    <li>Activation : Activation function to use. If you don't specify anything, no activation is applied (ie. "linear" activation)</li>
+                  </ul>
+            </dd>
+          
+            <dt class="col-sm-3">Dropout Layer</dt>
+            <dd class="col-sm-9">
+                <p>The Dropout layer randomly sets input units to 0 with a frequency of ratio at each step during training time.</p>
+                <ul class="list-group-flush">
+                    <li>Ratio : Float between 0 and 1. Fraction of the input units to drop.</li>
+                </ul>
+            </dd>
+
+            <dt class="col-sm-3">Batch Normalization Layer</dt>
+            <dd class="col-sm-9">
+                <p>Batch normalization applies a transformation that maintains the mean output close to 0 and the output standard deviation close to 1.</p>
+                <ul class="list-group-flush">
+                    <li>Momentum: Momentum for the moving average.</li>
+                    <li>Epsilon: Small float added to variance to avoid dividing by zero.</li>
+                </ul>
+            </dd>
+          
+            <dt class="col-sm-3"> Convolution Layer (2D)</dt>
+            <dd class="col-sm-9">
+                <p>This layer creates a convolution kernel that is convolved with the layer input to produce a tensor of outputs</p>
+                <ul class="list-group-flush">
+                    <li>Units (Filters): Integer, the dimensionality of the output space (i.e. the number of output filters in the convolution).</li>
+                    <li>Sizes:  An integer, specifying the height and width of the 2D convolution window where the single integer specifies the same value for all spatial dimensions.</li>
+                    <li>Strides: An integer, specifying the strides of the convolution along the height and width where the single integer specifies the same value for all spatial dimensions. </li>
+                </ul>
+            </dd>
+          
+            <dt class="col-sm-3"> Pooling Layer (Max)</dt>
+            <dd class="col-sm-9">
+                <p>Downsamples the input along its spatial dimensions (height and width) by taking the maximum value over an input window (of size defined by pool_size) for each channel of the input. The window is shifted by strides along each dimension.</p>
+                <ul class="list-group-flush">
+                    <li>Sizes (Pool size):  Integer, window size over which to take the maximum. The same window length will be used for both dimensions.</li>
+                    <li>Strides: Integer for strides values. Specifies how far the pooling window moves for each pooling step.</li>
+                </ul>
+            </dd>
+
+            <dt class="col-sm-3"> Flatten Layer </dt>
+            <dd class="col-sm-9">
+                <p>Flattens the input. Does not affect the batch size.</p>
+            </dd>
+          </dl>
+    </div>
+</div>
+<hr/>
+</div>
 <form method=post enctype=multipart/form-data>
     <div class="panel panel-default">
         <div class="panel-heading">Add & Remove Layers to model.</div>
@@ -24,9 +85,12 @@
                 <div class="input-group">
                     <select class="form-control" id="layers" name="layer-selection">
                         <option value="" disabled>Choose a layer</option>
-                        <option value="Dense">Dense</option>
+                        <option value="Dense" selected>Dense</option>
                         <option value="Dropout">Dropout</option>
                         <option value="BatchNorm">Batch Normalization</option>
+                        <option value="Conv2D">Convulational Layer</option>
+                        <option value="MaxPooling2D">Pooling Layer</option>
+                        <option value="Flatten">Flatten Layer</option>
                     </select>
                 </div>
             </div>
@@ -37,24 +101,33 @@
             <div class="form-group">
                 <div class="input-group">
                     <select class="form-control" id="activation" name="activation[]">
-                        <option value="" disabled selected>Choose activation function</option>
+                        <option value="" disabled >Choose activation function</option>
+                        <option value="relu" selected>ReLU</option>
                         <option value="tanh">Tanh</option>
-                        <option value="relu">ReLU</option>
                         <option value="linear">Linear</option>
                     </select>
                 </div>
             </div>
         </div>  
 
-        <div class="col-sm-2 nopadding">
+        <div class="col-sm-1 nopadding">
             <div class="form-group">
                 <input type="text" class="form-control" id="units" name="units[]" value="" placeholder="Units">
             </div>
         </div>  
-
-        <div class="col-sm-2 nopadding">
+        <div class="col-sm-1 nopadding">
             <div class="form-group">
-                <input type="text" class="form-control" id="ratio" name="ratio[]" value="" placeholder="Ratio">
+                <input type="text" class="form-control" id="strides" name="strides[]" value="" placeholder="Strides">
+            </div>
+        </div>
+        <div class="col-sm-1 nopadding">
+            <div class="form-group">
+                <input type="text" class="form-control" id="sizes" name="sizes[]" value="" placeholder="Sizes">
+            </div>
+        </div>
+        <div class="col-sm-1 nopadding">
+            <div class="form-group">
+                <input type="text" class="form-control" id="ratio" name="ratio[]" value="" placeholder="Ratio ">
             </div>
         </div>
         <div class="col-sm-1 nopadding">
@@ -67,6 +140,7 @@
                 <input type="text" class="form-control" id="epsilon" name="epsilon[]" value="" placeholder="Epsilon">
             </div>
         </div>
+        
         <div class="input-group-btn">
             <button class="btn btn-success" type="button"  onclick="layer_fields();"> <span class="glyphicon glyphicon-plus" aria-hidden="true"></span> </button>
         </div>
@@ -76,13 +150,17 @@
 
     </div>
     <div class="panel-footer"><small>Press <span class="glyphicon glyphicon-plus gs"></span> to add another form field. </small> <br> <small>Press <span class="glyphicon glyphicon-minus gs"></span> to remove form field. </small></div>
-    <div class="panel-footer"><small>Layers and parameters are described below.</em></small></div>
-    <div class="panel-footer"><small>Dense : Activation,Units <br> Batch Normalization : Momentum,Epsilon </small></div>
     
     </div>
     <div class="col-sm-3 nopadding">
         <div class="form-group">
             <input type="text" class="form-control" name="K_cross_val" value="" placeholder="Enter K value for cross-validation">
+            <br>
+            <input type="text" class="form-control" name="epochs" value="" placeholder="Epochs">
+            <br>
+            <input type="text" class="form-control" name="batch_size" value="" placeholder="Batch size">
+
+
         </div>
     </div>
     
@@ -90,10 +168,9 @@
         <div class="form-group">
             <div class="input-group">
                 <select class="form-control"  name="loss">
-                    <option value="" disabled selected>Choose a loss function</option>
+                    <option value="" disabled>Choose a loss function</option>
                     {% if classification_model %}
                     <option value="binary_crossentropy">Binary Crossentropy</option>
-                    <option value="categorical_crossentropy">Categorical Crossentropy</option>
                     <option value="sparse_categorical_crossentropy">Sparse Categorical Crossentropy</option>
                     {% endif %} 
 
@@ -110,8 +187,8 @@
         <div class="form-group">
             <div class="input-group">
                 <select class="form-control" name="optimizer">
-                    <option value="" disabled selected>Choose an optimizer</option>
-                    <option value="adadelta">Adadelta</option>
+                    <option value="" disabled>Choose an optimizer</option>
+                    <option value="adadelta" selected>Adadelta</option>
                     <option value="adam">Adam</option>
                     <option value="rmsprop">RMSProp</option>
                     <option value="sgd">SGD</option>
@@ -120,12 +197,28 @@
             </div>
         </div>
     </div>  
+    <div class="col-sm-3 nopadding">
+        <div class="form-group">
+        <label for="form-check-input">Data is coming from an image.</label><input class="form-check-input" type="checkbox" name="is_image" value = "yes" checked>
+        <label for="form-check-input">Dimension of the data :<input type="text" class="form-control" name="height" value="" placeholder="Height">
+        <label for="form-check-input">x</label><input type="text" class="form-control" name="width" value="" placeholder="Width">
+        <label for="form-check-input">x<input type="text" class="form-control" name="channel" value="" placeholder="Channel">
 
-    <input type=submit class="btn btn-primary active mt-2" value=Submit>
+    </div>
+    </div>
+    <div class="col-sm-3 nopadding">
+        <div class="form-group">
+            
+<input type="submit" class="btn btn-primary btn-lg btn-block active" value="Submit">
+
+        </div>
+    </div>
 </form>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://code.jquery.com/jquery-latest.min.js"></script>
 <script src= "{{ url_for('static',filename='js/selectAlgo_DL.js') }}"></script>
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
 {% endblock %}

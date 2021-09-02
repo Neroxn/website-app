@@ -2,6 +2,7 @@ from flask import Flask, request, redirect, url_for,render_template,session, fla
 import numpy as np
 import pandas as pd
 import os
+import shutil
 import pickle
 import tensorflow as tf
 from numpy import arange
@@ -34,18 +35,21 @@ def load_dataset(path,delimitter,qualifier,assumption = False):
     if os.path.isdir("csv") == False: # if file does not exist, create instead
         os.makedirs("csv")
 
+    unknown_columns = []
+    unknown_datatypes = []
     extension = path.split(".")[1]
     if(extension == "csv"): # if file is csv
         df = pd.read_csv(path)
         dataTypes = df.dtypes
         dataColumns = df.columns
-        return dataTypes,dataColumns,df
+        return dataTypes,dataColumns,df,unknown_columns,unknown_datatypes
     
     elif(extension == "txt"): # if file is txt
         dataColumns = []
         values = []
         dataTypes = []
         isTypes = assumption
+        unknown_datatypes = set()
         isColumn = True
         with open(path,mode = "r") as file: 
             for line in file:
@@ -68,11 +72,12 @@ def load_dataset(path,delimitter,qualifier,assumption = False):
         # dataframe is created
         df = pd.DataFrame(data = values, columns = dataColumns)
         if assumption: # assign datatypes to the columns
-            df = assign_datatypes(df,dataTypes) 
+            df,unknown_datatypes,unknown_columns = assign_datatypes(df,dataTypes) 
+
         else: # data types are already correct
             dataTypes = df.dtypes
 
-        return dataTypes,dataColumns,df
+        return dataTypes,dataColumns,df,unknown_datatypes,unknown_columns
 
 #Check if file is valid
 def allowed_file(filename):
@@ -94,9 +99,35 @@ def assign_datatypes(data,dataTypes):
     :data: -- given dataframe whose dataTypes are all strings
     :dataTypes: -- given list of data types that determines the types of the data
     """
+    unknown_datatypes = set()
+    unknown_columns = set()
+    assigned_datatypes = session.get("assigned_types")
+    assigned_columns = session.get("assigned_columns")
+    #print("Assigned datatypes = ",assigned_datatypes)
+    #print("Assigned columns = ",assigned_columns)
+
     for i in range(len(dataTypes)):
-        data.iloc[:,i] = data.iloc[:,i].astype(dataTypes[i])
-    return data
+        if assigned_datatypes.get(dataTypes[i]): # change columns 
+            new_type = assigned_datatypes.get(dataTypes[i])
+            #print("Changing {} to {}...".format(dataTypes[i],new_type)) 
+            dataTypes[i] = new_type
+    
+    for i in range(len(dataTypes)):
+        try:
+            if assigned_columns.get(data.columns[i]): # column value couldnt transformed
+                new_type = assigned_columns.get(data.columns[i]) 
+                #print("Changing {} to {}...".format(data.columns[i],new_type)) 
+                data.iloc[:,i] = data.iloc[:,i].astype(new_type)
+            else: 
+                data.iloc[:,i] = data.iloc[:,i].astype(dataTypes[i]) # try assigning type
+        except TypeError: # if type is wrong
+            unknown_datatypes.add(dataTypes[i])
+
+        except ValueError: # if type is correct but values can not be converted
+            unknown_columns.add(data.columns[i])
+    #print("Unknown dtypes : ", unknown_datatypes)
+    #print("Unknown columns : ", unknown_columns)
+    return data,list(unknown_datatypes),list(unknown_columns)
 
 def choose_attributes(df,attributes):
     """
@@ -154,15 +185,14 @@ def load_(UPLOAD_FOLDER,files):
 
     # check if user does not send any file
     if file.filename == '':
-        flash('No selected file')
+        flash('No selected file.')
         return None
 
     # a valid file is submitted. 
     if file and allowed_file(file.filename):
         # construct the file path
         filename = secure_filename(file.filename)
-        file_path = UPLOAD_FOLDER + "\\" + file.filename
-        print(file_path)
+        file_path = os.path.join(UPLOAD_FOLDER,file.filename) 
         file.save(os.path.join(UPLOAD_FOLDER, filename))
 
         # get delimitter and qualifier form the form.
@@ -175,8 +205,15 @@ def load_(UPLOAD_FOLDER,files):
             assumption = False
 
         # read the file and apply the model
-        _, _, df = load_dataset(file_path,delimitter=delimitter,qualifier = qualifier, assumption=assumption)
-        return df
+        _, _, df,unknown_types,unknown_columns = load_dataset(file_path,delimitter=delimitter,qualifier = qualifier, assumption=assumption)
+        if len(unknown_types) != 0: # some types are unknown
+            flash("Some types in provided file is unknown! ({}) Please assign it from existing types!".format(unknown_types))
+            session["unknown_types"] = unknown_types
+        if len(unknown_columns) != 0:
+            flash("Some columns in can not be converted to assigned datatype! ({}) Please assign it from existing types!".format(unknown_columns))
+            session["unknown_columns"] = unknown_columns
+
+        return df,unknown_types,unknown_columns
 
 def concat_columns(data,selected_columns):
     """
@@ -194,12 +231,13 @@ def check_float(potential_float):
     Parameters:
     :potential_float: -- unknown type 
     """
+    if potential_float is None:
+        return False
     try:
         float(potential_float)
         return True
     except ValueError:
         return False
-
 def handle_actions(data,actions):
     """
     Handle the actions and clear the empty inputs and check the errorous inputs.
@@ -252,7 +290,7 @@ def filter_data(data, actions):
         data = data[condition]
     return copy_data.loc[data.index]
 
-def remove_temp_files(user_id, head = "temp/"):
+def remove_temp_files(user_id, head = "temp"):
     """
     Remove temporary files. This function will be used when the user is log out.
     Parameters:
@@ -271,10 +309,18 @@ def remove_temp_files(user_id, head = "temp/"):
             user_files += [file]
     
     for file in user_files: # remove all files belongs to the user
-        path = head + file
-        os.remove(path)
+        path_temp = os.path.join(head,file)
+        is_directory = os.path.isdir(path_temp)
+        if not is_directory:
+            os.remove(path_temp)
+        else:
+            try: # if path is folder, remove 
+                shutil.rmtree(path_temp)
+            except OSError as e:
+                print("Error: %s - %s." % (e.filename, e.strerror))
 
-def load_temp_dataframe(user_id, body = "-df-temp",method = "feather",head = "temp/"):
+
+def load_temp_dataframe(user_id, body = "-df-temp",method = "feather",head = "temp"):
     """
     Load temporary dataframe into temp folder for user. 
     Everytime we need dataframe, reload it.
@@ -286,7 +332,7 @@ def load_temp_dataframe(user_id, body = "-df-temp",method = "feather",head = "te
 
     if method == "feather":
         extension = ".feather"
-    path = head + str(user_id) + body + extension
+    path = os.path.join(head,str(user_id) + body + extension)
     try:
         data = pd.read_feather(path)
     except:
@@ -295,7 +341,7 @@ def load_temp_dataframe(user_id, body = "-df-temp",method = "feather",head = "te
     data = data.set_index("index") if "index" in data.columns else data
     return data
 
-def save_temp_dataframe(data,user_id, body="-df-temp", method = "feather", head = "temp/"):
+def save_temp_dataframe(data,user_id, body="-df-temp", method = "feather", head = "temp"):
     """
     Save temporary dataframe into temp folder for user
     Everytime we change dataframe, change it
@@ -306,19 +352,20 @@ def save_temp_dataframe(data,user_id, body="-df-temp", method = "feather", head 
     if os.path.isdir(head) == False: # if file does not exist, create instead
         os.makedirs(head)
 
+    
     if method == "feather":
         extension = ".feather"
-        path = head + str(user_id) + body + extension
+        path = os.path.join(head,str(user_id) + body + extension)
         data = data.reset_index() # convert index to index column
         data.to_feather(path)
         
     if method == "csv":
         extension = ".csv"
-        path = head + str(user_id) + body + extension
+        path = os.path.join(head,str(user_id) + body + extension)
         data.to_csv(path_or_buf = path) # convert index to csv
 
 
-def save_user_model(model,user_id,body = "-model", method = "pickle", head = "models/"):
+def save_user_model(model,user_id,body = "-model", method = "pickle", head = "models"):
     """
     Save users trained model.
     Parameters:
@@ -329,13 +376,13 @@ def save_user_model(model,user_id,body = "-model", method = "pickle", head = "mo
     if os.path.isdir(head) == False: # if file does not exist, create instead
         os.makedirs(head)
     if method == "pickle":
-        filename = head + str(user_id) + body +  ".sav"
+        filename = os.path.join(head,str(user_id) + body +  ".sav")
         pickle.dump(model, open(filename, 'wb'))
     if method == "model":
-        filename = head + str(user_id) + body
+        filename = os.path.join(head,str(user_id) + body)
         model.save(filename)
 
-def load_user_model(user_id,body = "-model", method = "pickle",head = "models/"):
+def load_user_model(user_id,body = "-model", method = "pickle",head = "models"):
     """
     Load users trained model.
     Parameters:
@@ -346,11 +393,11 @@ def load_user_model(user_id,body = "-model", method = "pickle",head = "models/")
     if os.path.isdir(head) == False: # if file does not exist, create instead
         os.makedirs(head)
     if method == "pickle":
-        filename =head + str(user_id) + body + ".sav"
+        filename =os.path.join(head,str(user_id) + body + ".sav")
         print(filename)
         return pickle.load(open(filename, 'rb'))
     if method == "model":
-        filename = head + str(user_id) + body
+        filename = os.path.join(head,str(user_id) + body)
         return tf.keras.models.load_model(filename)
 
 def type_divider(df):
@@ -436,12 +483,35 @@ def check_suitable(test_data, new_data):
     """
     # check if columns match
     if(test_data.shape[1] != new_data.shape[1]): # not have equal number of columns
-        flash("New data has extra columns. Only columns used in model training is used")
         if test_data.columns.isin(new_data.columns).all(): # columns match so suitable
+            flash("Newly uploaded data has extra columns. Only columns used in model training will be used.")
             return True
         else:
-            flash("Test data does not match with new data.")
+            flash("Data is not suitible with newly uploaded data.")
             return False
 
     return test_data.columns.isin(new_data.columns).all() # return true if columns match or false if not
     
+def assign_default_value(potential_variable,default_value,check_type = "float", negative_allowed = False):
+    """
+    Check and assign value if the value can not be converted into a float
+    """ 
+    if check_type == "float": # value can be converted into float
+        can_converted = check_float(potential_variable)
+        potential_return = default_value if can_converted == False else float(potential_variable)
+        
+    elif check_type == "int": # value can be converted into int
+        can_converted = check_float(potential_variable)
+        potential_return = default_value if can_converted == False else int(potential_variable)
+        
+    elif check_type == "string":
+        return default_value if potential_variable == "" else potential_variable
+
+    if negative_allowed: # if negative allowed return variable
+        return potential_return
+
+    else: # negative not allowed
+        if potential_return >= 0:
+            return potential_return
+        else:
+            return default_value

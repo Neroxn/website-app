@@ -13,24 +13,81 @@
 
 <form action="" method=post enctype=multipart/form-data>		
 	<div class = "container mt-5">
-		<h1>Add dataset to workspace. </h1>
+		<div class="container d-flex h-100">
+            <div class="row justify-content-center align-self-center">
+                <h1 class="display-4">Add dataset to workspace</h1>
+            </div>
+        </div>
+        <hr/>
 		<div class="form-group">
-			<label class="form-check-label" >Accepted files that are TXT exported from Excel and CSV. </label>
-            <p>Fields below is only used if TXT is uploaded.</p>
-      		<input class="form-control-file" type=file name=file>
-			<label class="form-check-label" >Delimitter</label>
-            <input type = "text" class="form-control" name = "delimitter" placeholder=","/>
-      		<label class="form-check-label" >String qualifier</label>
-            <input type = "text" class="form-control" name = "qualifier" placeholder='""'/>
+              <div class="custom-file">
+                <input type="file" class="custom-file-input" id="customFile" name=file>
+                <label class="custom-file-label" for="customFile">Upload your data in the CSV or TXT format</label>
+              </div>
+            <hr>
+            <input type = "text" class="form-control" name = "delimitter" placeholder="Delimitter (only for TXT)"/>
+            <br>
+            <input type = "text" class="form-control" name = "qualifier" placeholder='String qualifier (only for TXT)'/>
 		</div>
 		<div class="form-group form-check">
         	<input class="form-check-input" type="checkbox" name="is-value-type" value = 1 checked>
-            <label class="form-check-label" >First row in the data determines datatypes.</label>
+            
+            <label class="form-check-label" >First row in the txt file contains datatypes (only for TXT).</label>
         </div>
-        <input class="btn btn-primary active" type=submit value=Upload>
+        <input class="btn btn-primary active btn-block btn-lg" type=submit value=Upload>
+        <br>
+        <button class="btn btn-primary btn-block" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+            ?
+          </button>
+        </p>
+        <div class="collapse" id="collapseExample">
+          <div class="card card-body">
+            <div class="container p-3 my-3 bg-primary text-white">For text files, to indicate which features have which datatype,
+                use the first row of your data as the indicator of the features' datatypes.  An example format of the text files that are supported
+                given in the table below.
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <th scope="row">Datatypes</th>
+                            <td scope="col">string</td>
+                            <td scope="col">integer</td>
+                            <td scope="col">bool</td>
+                        </tr>
+                      <tr>
+                        <th scope="col">Features</th>
+                        <td scope="col">Name</td>
+                        <td scope="col">Age</td>
+                        <td scope="col">Married</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Data 1</th>
+                        <td>Mark</td>
+                        <td>42</td>
+                        <td>1</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Data 2</th>
+                        <td>Jacob</td>
+                        <td>37</td>
+                        <td>1</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Data 3</th>
+                        <td>Larry</td>
+                        <td>24</td>
+                        <td>0</td>
+                      </tr>
+                    </tbody>
+                  </table>
+            </div>
+          </div>
+        </div>
+        
+
 	</div>    
 </form>
 
+<div class = "container mt-5">
 <div class="scrollmenu">
   <table>
       <tr>
@@ -56,19 +113,21 @@
   
   </table>
 </div>
-
-<div class='yazi'>
-<div class="container">
-  {% if isLoaded %}
-    <h2>Data with {{ rowS }} samples and {{ colS }} features is loaded successfully! </h2>
-  {% endif %}
-  </div>
+{% if isLoaded %}
+<h2>Data with {{ rowS }} samples and {{ colS }} features is loaded successfully! </h2>
+{% endif %}
 </div>
+
 
 {% endblock %}
 
 {% block scripts %}
-
+<script type="application/javascript">
+    $('input[type="file"]').change(function(e){
+        var fileName = e.target.files[0].name;
+        $('.custom-file-label').html(fileName);
+    });
+</script>
 {% endblock %}
 
 

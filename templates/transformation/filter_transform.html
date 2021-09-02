@@ -13,8 +13,12 @@
 {% block page_content %}
 <form action="" method="post" style="display:block">
 	<div class = "container mt-5">
-    		<h2> Please choose features to filter your dataset.</h2>
-		<label class="form-check-label" >Features not selected has no effect in filtering.</label>
+		<div class="container d-flex h-100">
+			<div class="row justify-content-center align-self-center">
+				<h1 class="display-4">Choose features to filter your dataset.</h1>
+			</div>
+		</div>
+		<hr/>
     		<input type="text" class="form-control" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
     		<ul id = "myUL" class="list-group">
       		{% for col in cols %}
@@ -35,7 +39,7 @@
       			{% endif %} 
       		{% endfor %}
     		</ul>
-    		<input type="submit" class="btn btn-primary active">
+    		<input type="submit" class="btn btn-primary btn-lg btn-block active" value="Submit">
 	</div>
 </form>
 {% endblock %}

@@ -1,7 +1,8 @@
+from flask.templating import render_template
 import numpy as np
 import pandas as pd
 from sklearn.metrics import classification
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler,FunctionTransformer
 from sklearn.linear_model import LinearRegression,LogisticRegression,ElasticNet
 from sklearn.svm import SVR,SVC
 from sklearn.utils import shuffle
@@ -9,9 +10,9 @@ from sklearn.multioutput import MultiOutputRegressor,MultiOutputClassifier
 from sklearn.base import clone
 from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, RandomForestClassifier, AdaBoostClassifier
 from werkzeug.utils import redirect
-from .transformers import object_encode, standard_scale
+from .transformers import min_max_scale, object_encode, onehot_encode, standard_scale
 from utils import save_user_model,check_float
-from utils.transformers import calculate_model_score
+from utils.transformers import calculate_model_score,pixel_scaler
 from flask import flash, url_for, session
 import tensorflow as tf
 
@@ -83,8 +84,11 @@ def create_LogisticRegression(selected_parameters):
     if C < 0:
         C = 1.0
         flash("Negative C value is changed to its default value")
-
-    model = LogisticRegression(penalty = penalty, C = C, l1_ratio = l1_ratio)
+    if penalty == "elasticnet":
+        solver = 'saga'
+    else:
+        solver = "liblinear"
+    model = LogisticRegression(penalty = penalty, C = C, l1_ratio = l1_ratio, solver=solver)
     return MultiOutputClassifier(model)
 
 def create_LinearRegression(selected_parameters):
@@ -237,7 +241,7 @@ def create_AdaBoostClassifier(selected_parameters):
     return MultiOutputClassifier(model)
     
 
-def get_layer(information_dict):
+def get_layer(information_dict, input_shape = None):
     """
     Construct a layer and return that layer for creating a model.
     :information_dict: -- dictionary that holds information for layers
@@ -262,11 +266,43 @@ def get_layer(information_dict):
         activation = information_dict["activation"]
         layer = tf.keras.layers.LSTM(units = units, activation = activation)
 
+    elif layer_name == "Conv2D":
+        filters = information_dict["units"]
+        kernel_size = information_dict["size"]
+        strides = information_dict["strides"]
+        activation = information_dict["activation"]
+        layer = tf.keras.layers.Conv2D(filters = filters, kernel_size = (kernel_size,kernel_size),
+        strides = (strides,strides), activation= activation)
+
+    elif layer_name == "MaxPooling2D":
+        pool_size = information_dict["size"]
+        strides = information_dict["strides"]
+        layer = tf.keras.layers.MaxPooling2D(pool_size=pool_size, strides=strides)
+
+    elif layer_name == "Flatten":
+        layer = tf.keras.layers.Flatten()
+
     else:
         flash("An error occured while constructing layers!")
         return None # redirect
-
+    print("Layer returned : ",layer)
     return layer
+def loss_fetcher(**kwargs):
+    if kwargs["loss"] == "sparse_categorical_crossentropy":
+        return tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+    elif kwargs["loss"] == "binary_crossentropy":
+        return tf.keras.losses.BinaryCrossentropy(from_logits=True)
+
+    elif kwargs["loss"] == "mse":
+        return tf.keras.losses.MeanSquaredError()
+
+    elif kwargs["loss"] == "mae":
+        return tf.keras.losses.MeanAbsoluteError()
+    
+    else: # this will not be achiaveble 
+        flash("An error has occured while selecting loss function!")
+        return render_template(url_for("selectAlgo_DL"))
 
 def create_RNN(selected_parameters):
     """
@@ -282,7 +318,7 @@ def create_RNN(selected_parameters):
     # TODO : Create a function that takes these parameters and outputs a model by constructing them.
     return None
 
-def create_DNN(seleced_parameters, model_configurations, final_activation = "linear"):
+def create_DNN(seleced_parameters, model_configurations, final_activation = "linear", **kwargs):
     """
     Create a DNN (Deep Neural Network) model --
 
@@ -295,23 +331,37 @@ def create_DNN(seleced_parameters, model_configurations, final_activation = "lin
     >> Returns
     :model: -- model that is created
     """
-
+    add_flatten = True
     input_size = len(session.get('selected_x'))
     type_of_model = model_type(session.get("selected_model"))
-    output_size = len(session.get("selected_y")) # --> else no of unique values.
+    if type_of_model == "regression":
+        output_size = len(session.get("selected_y")) # --> else no of unique values.
+    else:
+        if model_configurations["loss"] == "binary_crossentropy":
+            output_size = 1
+        elif model_configurations["loss"] == "sparse_categorical_crossentropy":
+            output_size = kwargs.get("no_of_unique")
 
     model = tf.keras.Sequential() # base model 
-    model.add(tf.keras.Input(shape  = input_size))
+
+    if session.get("selected_model") in ["DNN_R","DNN_C"]: # 
+        model.add(tf.keras.Input(shape  = input_size))
+        add_flatten = False
 
     for layer_info in seleced_parameters: # user defined layers
-        model.add(get_layer(layer_info))
+        try:
+            model.add(get_layer(layer_info))
+        except:
+            flash("An error made while creating the layer : {}",layer_info)
     
     # output layer, if regression output linear else softmax
+    if add_flatten:
+        model.add(get_layer({"layer_name" : "Flatten"}))
     model.add(tf.keras.layers.Dense(output_size, activation = final_activation))
     
     # general configurations
     optimizer = model_configurations["optimizer"]
-    loss = model_configurations["loss"]
+    loss = loss_fetcher(loss = model_configurations["loss"])
     metrics = model_configurations["metrics"]
     model.compile(optimizer = optimizer, loss = loss, metrics=metrics)
     return model
@@ -329,8 +379,8 @@ def model_type(selected_model):
     # might resolve some errors
     
     modelType = None
-    regression_tasks = ["SVR","LinearRegression","RandomForestRegressor","AdaBoostRegressor","DNN_R"]
-    classification_tasks = ["SVC","LogisticRegression","RandomForestClassifier","AdaBoostClassifier","DNN_C"]
+    regression_tasks = ["SVR","LinearRegression","RandomForestRegressor","AdaBoostRegressor","DNN_R","CNN_R"]
+    classification_tasks = ["SVC","LogisticRegression","RandomForestClassifier","AdaBoostClassifier","DNN_C","CNN_C"]
 
     if selected_model in regression_tasks:
         modelType = "regression"
@@ -341,7 +391,7 @@ def model_type(selected_model):
         flash("An error occured. Please contact the admins!")
     return modelType
 
-def cross_validate_models(X,y,model,K, isDNN = False, **kwargs):
+def cross_validate_models(X,y,model,K,**kwargs):
     """
     Use cross validation using the constructed model.
 
@@ -350,47 +400,61 @@ def cross_validate_models(X,y,model,K, isDNN = False, **kwargs):
     :model_scores: -- list that holds dictionary for each model with loss scores on test data
     """
     # calculate the sizes for test and train
-    if isDNN:
+    if session.get("selected_model") in ["CNN_C","CNN_R","DNN_R","DNN_C"]:
         untrained_model = tf.keras.models.clone_model(model)
     else:
         untrained_model = clone(model)
     full_size = X.shape[0]
     test_size = int(full_size/K) 
     type_of_model = model_type(session.get("selected_model"))
+
+    # initialize emtpy lists
     models = []
     model_scores = []
+    test_predictions = ([],[])
+    input_shape = (None,None,None)
+
+    X_copy = X.copy()
+    y_copy = y.copy()
+
     for k in range(K):
         # shuffle the rows
-        concatted_shuffled = shuffle(pd.concat([X,y],axis = 1))
-        X = concatted_shuffled[session.get("selected_x")]
-        y = concatted_shuffled[session.get("selected_y")]
+        concatted_shuffled = shuffle(pd.concat([X_copy,y_copy],axis = 1))
+        X_copy = concatted_shuffled[session.get("selected_x")]
+        y_copy = concatted_shuffled[session.get("selected_y")]
         
         # partition the data
-        X_test,y_test = X.iloc[:test_size,:],y.iloc[:test_size,:]
-        X_train,y_train = X.iloc[test_size:,:],y.iloc[test_size:,:]
+        X_test,y_test = X_copy.iloc[:test_size,:],y_copy.iloc[:test_size,:]
+        X_train,y_train = X_copy.iloc[test_size:,:],y_copy.iloc[test_size:,:]
 
+        print("Check dimensions : ",X_test.shape,X_train.shape)
         # train the model
-        print("Model will be trained!",y_train.head())
-        if isDNN:
+        if session.get("selected_model") in ["CNN_R","CNN_C"]: # if model is CNN, reshape inputs
+            input_shape = kwargs["input_shape"]
+            X_train = X_train.values.reshape(X_train.shape[0],input_shape[0],input_shape[1],input_shape[2])
+            X_test = X_test.values.reshape(X_test.shape[0],input_shape[0],input_shape[1],input_shape[2])
+
+        if session.get("selected_model") in ["CNN_R","CNN_C","DNN_R","DNN_C"]:
             model = train_DNN(model,X_train,y_train, epochs= kwargs["epochs"], batch_size = kwargs["batch_size"],
             callbacks = kwargs["callbacks"])
         else:
             model = train_model(model,X_train,y_train)
-        print("Model trained!")
 
-        model_score,test_predictions = calculate_model_score(model,X_test.copy(),y_test.copy(), type_of_model = type_of_model) # calculate model scores that are useful
-        #print(test_predictions)
+        if model is None: # if an error occured while training the model 
+            break
+
+        model_score,test_predictions = calculate_model_score(model,X_test.copy(),y_test.copy(), type_of_model = type_of_model,input_shape = input_shape) # calculate model scores that are useful
+
         # append result to list
         models += [model]
         model_scores += [model_score]
 
         # reset back to default model
-        if isDNN:
+        if session.get("selected_model") in ["CNN_C","CNN_R","DNN_R","DNN_C"]:
             model = tf.keras.models.clone_model(untrained_model)
-            model.compile(loss = kwargs["loss"], metrics = kwargs["metrics"], optimizer = kwargs["optimizer"])
+            model.compile(loss = loss_fetcher(loss = kwargs["loss"]), metrics = kwargs["metrics"], optimizer = kwargs["optimizer"])
         else:
             model = clone(untrained_model)
-
 
     return model_scores,models,test_predictions
 
@@ -412,8 +476,13 @@ def preprocess_for_model(selected_model,X,y):
     selected_type = model_type(selected_model)
     scalers,encoders = [],[]
 
-    scaled_data_X,scaler_X = standard_scale(X.select_dtypes(include = "number"))
-    session["numerical_X"] = [col for col in X.select_dtypes(include = "number").columns]
+    # if selected model is CNN, divide the pixels by 255.0 instead of scaling
+    if selected_model in ["CNN_R","CNN_C"]:
+        scaled_data_X,scaler_X = min_max_scale(X.select_dtypes(include = "number"))
+        session["numerical_X"] = [col for col in X.select_dtypes(include = "number").columns]
+    else:
+        scaled_data_X,scaler_X = standard_scale(X.select_dtypes(include = "number"))
+        session["numerical_X"] = [col for col in X.select_dtypes(include = "number").columns]
 
     if selected_type == "classification":
         scaled_data_y,scaler_y = y.select_dtypes(include = [np.int8,np.int16,np.int32,np.int64]),None
@@ -421,7 +490,7 @@ def preprocess_for_model(selected_model,X,y):
     else:
         scaled_data_y,scaler_y = standard_scale(y.select_dtypes(include = "number"))
         session["numerical_y"] = [col for col in y.select_dtypes(include = "number").columns]
-    
+
     encoded_data_X,encoder_X = object_encode(X.select_dtypes(include = "object"))
     session["object_X"] = [col for col in X.select_dtypes(include = "object").columns]
 
@@ -442,14 +511,15 @@ def preprocess_for_model(selected_model,X,y):
 
     encoders += [encoder_y]
     if encoder_y is not None:
-        y[y.select_dtypes(include = "object").columns] = encoded_data_y   
+        y[y.select_dtypes(include = "object").columns] = encoded_data_y
 
     X_processed,y_processed =  X,y
 
     if selected_type == "regression": # if model is regression, change integers in y to float
         y_processed_integers = y_processed.select_dtypes(include = [np.int8,np.int16,np.int32,np.int64])
         y_processed[y_processed_integers.columns] = y_processed_integers.astype(np.float32)
-        
+    
+    print(X_processed,y_processed)
     save_user_model(encoders,session.get('user_id'),body = "-model-encoders")
     save_user_model(scalers,session.get('user_id'),body = "-model-scalers")
 
@@ -507,7 +577,11 @@ def train_model(model,train_X, train_y):
     >> Returns
     :model: -- model that is trained
     """
-    model.fit(train_X,train_y)
+    try:
+        model.fit(train_X,train_y)
+    except:
+        flash("Something went wrong! Constructed model is not valid for the selected data.")
+        return None
     return model
 
 def train_DNN(model,train_X,train_y, epochs = 30, batch_size = 32,callbacks = []):
@@ -521,8 +595,12 @@ def train_DNN(model,train_X,train_y, epochs = 30, batch_size = 32,callbacks = []
     >> Returns
     :model: -- model that is trained
     """
-    model.fit(train_X,train_y, epochs = epochs,
-    callbacks = callbacks, batch_size = batch_size)
+    try:
+        model.fit(train_X,train_y, epochs = epochs,
+        callbacks = callbacks, batch_size = batch_size)
+    except:
+        flash("Something went wrong! Constructed model is not valid for the selected data.")
+        return None
     return model
 
 ################################################################################################################################

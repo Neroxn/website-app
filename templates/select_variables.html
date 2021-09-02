@@ -11,9 +11,15 @@
 
 {% block page_content %}
 <div class="container mt-5">
-  <h1>Select attributes that will be used in model training. </h1>
+  <div class="container d-flex h-100">
+    <div class="row justify-content-center align-self-center">
+		<h1 class="display-4">Select attributes that will be used in training.
+    </h1>
+    </div>
+</div>
+<hr/>
   <form method="post">
-    <button type='button' class="btn btn-primary" onClick='toggle(this)'>Toggle All</button>
+    <button type='button' class="btn btn-primary btn-lg btn-block" onClick='toggle(this)'>Toggle All</button>
     <hr/>
     <input class="form-control" id="myInput" type="text" placeholder="Search..">
     <table class="table table-borderless">
@@ -34,7 +40,8 @@
       {% endfor %}
       </tbody>
     </table>
-    <input type="submit" class="btn btn-primary">
+    
+<input type="submit" class="btn btn-primary btn-lg btn-block active" value="Submit">
   </form>
 </div>
 

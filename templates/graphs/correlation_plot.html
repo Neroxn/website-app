@@ -17,22 +17,31 @@
 <form method="post">
   <div class = "container mt-3">
     {% if graphSelected %}
-      <h1 style="text-align: center; margin-bottom: 40px;"> Correlation matrix: </h1>
+    <div class="container d-flex h-100">
+      <div class="row justify-content-center align-self-center">
+      <h1 class="display-4">Correlation Matrix</h1>
+      </div>
+  </div>
+  <hr/>
       <div style="display: flex; justify-content: center;">
         {{ plot_div|indent(4)|safe }}
       </div>
       <a class="btn btn-success mt-2" href="{{ url_for('download_csv',path = path) }}">Download graph as csv</a>
     {% endif %}
-    <hr/>
-    <h2> Select features for correlation matrix</h2>
-    <button type='button' class= "btn btn-primary mt-2" onClick="toggle(this)" /> Toggle All</button>
+    <div class="container d-flex h-100">
+      <div class="row justify-content-center align-self-center">
+      <h1 class="display-4">Select features for correlation matrix</h1>
+      </div>
+  </div>
+  <hr/>
+    <button type='button' class= "btn btn-primary btn-lg btn-block mt-2" onClick="toggle(this)" /> Toggle All</button>
     <input type="text" class="form-control mt-2" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
     <ul id="myUL">
       {% for col in columns %}
         <li class="list-group-item" ><label for="01"><input type="checkbox" name="parameters" value = '{{ col }}' checked> {{ col }}</label></li>
       {% endfor %}
     </ul>
-    <input type="submit" class= "btn btn-primary mt-2" value="Submit">
+    <input type="submit" class="btn btn-primary btn-lg btn-block active" value="Submit">
   </div>
 </form>
 

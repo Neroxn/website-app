@@ -11,8 +11,13 @@
 {% block page_content %}
 <form action="" method = "post" enctype="multipart/form-data">
   <div class = "container mt-5">  	
-    	<h2> Select parameters for creating new colum : </h2>
-    <button type="button" class="btn btn-primary" onClick="toggle(this)" /> Toggle All</button>
+    <div class="container d-flex h-100">
+      <div class="row justify-content-center align-self-center">
+      <h1 class="display-4">Choose operation and parameters.</h1>
+      </div>
+  </div>
+  <hr/>
+    <button type="button" class="btn btn-primary btn-block btn-lg" onClick="toggle(this)" /> Toggle All</button>
     <input type="text" class="form-control mt-2" id="myInput" onkeyup="myFunction()" placeholder="Search for features.." title="Type in a name">
     <ul id="myUL">
       {% for col in columns %}
@@ -21,9 +26,29 @@
     	</ul>
   </div>
   <div class = "container mt-3">
-    <h2>Choose operation and parameters to create a new column with existings one.</h2>
     <div class = "container mt-2 ">
-      <h3>Basic Operations</h3>
+      <div class="container d-flex h-100">
+        <div class="row justify-content-center align-self-center">
+        <h1 class="display-4">Create New Column</h1>
+        <dl class="row">
+        
+          <dt class="col-sm-3">Sum</dt>
+          <dd class="col-sm-9">
+            Sum the selected columns.
+          </dd>
+        
+          <dt class="col-sm-3">Mean</dt>
+          <dd class="col-sm-9">Sum the selected columns and take average.</dd>
+        
+          <dt class="col-sm-3 text-truncate">Difference </dt>
+          <dd class="col-sm-9">Take the difference of first two selected columns. Other columns will be ignored.</dd>
+        
+          <dt class="col-sm-3 text-truncate">Concat Objects </dt>
+          <dd class="col-sm-9">Add features of the values similar to string addition.</dd>
+        </dl>
+        </div>
+    </div>
+    <hr/>
       <label>Create new columns by using following operation:</label><br>
       <div class = "form-check-inline">
         <input type="radio" class="form-check-input" name="selected_mode" value="sum" checked> Sum 
@@ -39,30 +64,68 @@
       </div>
       <input type="text" class="form-control mt-2" name = "new_column_name" placeholder = "New column name">
       <div class="form-group form-check mt-1">
-        <input class="form-check-input" type="checkbox" name = "delete_columns" value ="1" checked> Delete selected columns
+        <input class="form-check-input" type="checkbox" name = "delete_columns" value ="1" checked> Delete the columns used
       </div>
 	</div>
     <div class = "container mt-2">
-      <h3>Column Handling</h3>
-      <p><input type="radio" name="selected_mode" value="drop-columns"> Drop Columns</p>
-      <p><input type="radio" name="selected_mode" value="drop-nan-rows"> Drop NaN Rows</p>
-      <p><input type="radio" name="selected_mode" value="drop-nan-columns"> Drop NaN Columns</p>
-	</div>
+      
     <div class = "container mt-2">
-      <h3>Impute Columns</h3>
-      <label>Replace the columns with following operation:</label><br>
-      <div class = "form-check-inline">
-        <input type="radio" class="form-check-input" name="selected_mode" value="impute-columns-median"> Median
-      </div>
-      <div class = "form-check-inline">
-        <input type="radio" class="form-check-input" name="selected_mode" value="impute-columns-mean"> Mean
-      </div>
-      <div class = "form-check-inline">
-        <input type="radio" class="form-check-input" name="selected_mode" value="impute-columns-mfq"> Most Frequent
-      </div>
+      <div class="container d-flex h-100">
+        <div class="row justify-content-center align-self-center">
+        <h1 class="display-4">NaN Value Handling </h1>
+        <dl class="row">
+        
+          <dt class="col-sm-3">Drop Columns</dt>
+          <dd class="col-sm-9">
+            Drop columns that contains NaN value.
+          </dd>
+        
+          <dt class="col-sm-3">Drop Rows</dt>
+          <dd class="col-sm-9">Drop rows that contains NaN value.</dd>
+        
+        
+        </dl>
+        </div>
+    </div>
+      <p><input type="radio" name="selected_mode" value="drop-nan-rows"> Drop Rows</p>
+      <p><input type="radio" name="selected_mode" value="drop-nan-columns"> Drop Columns</p>
 	</div>
+  <div class="col-sm-3 nopadding"> 
+    <div class="form-group">
+        <div class="input-group">
+          <input type="radio" name="selected_mode" value="Impute">
+            <select class="form-control" name="selected_mode_impute">
+                <option value="" disabled>Imputation for NaN values</option>
+                <option value="impute-columns-median"> Median</option>
+                <option value="impute-columns-mean"> Mean</option>
+                <option value="impute-columns-mfq"> Most Frequent</option>
+                <option value="impute-iterative"> Iterative</option>
+            </select>
+        </div>
+    </div>
+</div>
+
     <div class = "container mt-2">
-      <h3>Column Preprocess</h3>
+      <div class="container d-flex h-100">
+        <div class="row justify-content-center align-self-center">
+        <h1 class="display-4">Columns transformation</h1>
+        <dl class="row">
+        
+          <dt class="col-sm-3">Min-Max Scale</dt>
+          <dd class="col-sm-9">
+            Transform features by scaling each feature to a range (0,1).
+          </dd>
+        
+          <dt class="col-sm-3">Standard Scale</dt>
+          <dd class="col-sm-9">Standardize features by removing the mean and scaling to unit variance.</dd>
+        
+          <dt class="col-sm-3 text-truncate">Label Encoder </dt>
+          <dd class="col-sm-9">Encode target labels with value between 0 and n_classes-1.</dd>
+        
+        </dl>
+        </div>
+    </div>
+    <hr/>
       <div class = "form-check-inline">
         <input type="radio" class="form-check-input" name="selected_mode" value="min-max-scale"> Min-Max Scale
       </div>
@@ -72,11 +135,10 @@
       <div class = "form-check-inline">
         <input type="radio" class="form-check-input" name="selected_mode" value="object-encode"> Object Encoding
       </div>
-      <div class = "form-check-inline">
-        <input type="radio" class="form-check-input" name="selected_mode" value="onehot-encode"> Onehot Encoding
-      </div>
     </div>
-    <input type="submit" class="btn btn-primary mt-2" value="submit">
+    
+    
+      <input type="submit" class="btn btn-primary btn-lg btn-block active" value="Submit">
   </div>
 </form>
 

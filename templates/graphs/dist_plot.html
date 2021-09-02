@@ -19,14 +19,24 @@
 <form method = "POST">
   <div class = "container mt-3">
     {% if graphSelected %}
-    <h1 style="text-align: center; margin-bottom: 40px;"> Histogram plot of parameter {{ selected  }} </h1>
+    <div class="container d-flex h-100">
+      <div class="row justify-content-center align-self-center">
+      <h1 class="display-4">Histogram plot of parameter ({{ selected }})</h1>
+      </div>
+  </div>
+  <hr/>
     <div style="display: flex; justify-content: center;">
       {{ plot_div|indent(4)|safe }}
     </div>
           <a class="btn btn-success mt-2 ml-2" href="{{ url_for('download_csv',path = path) }}">Download graph as csv</a>
         {% endif %}
-        <hr/>
-    <h2> Select a feature to plot histogram</h2>
+        <div class="container d-flex h-100">
+          <div class="row justify-content-center align-self-center">
+          <h1 class="display-4">Select a feature to plot histogram
+          </h1>
+          </div>
+      </div>
+      <hr/>
     <label for="parameter">Choose a parameter</label>
     <select name="selected_parameter" class="form-control" id="selected_parameter">
       {% for col in columns %}
@@ -35,11 +45,11 @@
     </select>
     <label>Number of bins</label>
     <input type = "text" class="form-control" name = "numberBin" placeholder = "20"/>
-    <input type="submit" class= "btn btn-primary mt-2" value="Submit">
+    <input type="submit" class="btn btn-primary btn-lg btn-block active" value="Submit">
   </div>
 </form>
 
-
+<input type="submit" class="btn btn-primary btn-lg btn-block active" value="Submit">
 
 {% endblock %}
 

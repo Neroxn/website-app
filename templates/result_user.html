@@ -47,23 +47,98 @@
 </div>
 <a class="btn btn-success mt-2" href="{{ url_for('download_csv',path = path) }}">Download results as csv file.</a>
 {% endif %}
+
+{% if file_contains_y %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-8">
+              <table class = "table">
+                <thead>
+                  <tr>
+                    <th scope="col">#Parameter</th>
+                    {% for parameter in parameters %}
+                    <th scope="col">{{ parameter }}</th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                {% if model_scores %}
+                  <th scope = "row"> Model Scores </th>
+                    {% for model_score in model_scores %}
+                      <td>{{ model_score |round(3, 'floor')  }}</td>
+                    {% endfor %}  
+                {% endif %}
+              </tr>
+  
+                <tr>
+                {% if mse_errors %}
+                  <th scope = "row">MSE</th>
+                    {% for mse in mse_errors %}
+                      <td>{{ mse |round(3, 'floor')}}</td>
+                    {% endfor %}  
+                {% endif %}
+              </tr>
+              <tr>
+                {% if mae_errors %}
+                  <th scope = "row">MAE</th>
+                  {% for mae in mae_errors %}
+                    <td>{{ mae |round(3, 'floor')}}</td>
+                  {% endfor %}  
+                {% endif %}
+              </tr>
+              <tr>
+                {% if log_errors %}
+                  <th scope = "row">Log Error</th>
+                    {% for log_error in log_errors %}
+                    <td>{{ log_error |round(3, 'floor')}}</td>
+                    {% endfor %}  
+                {% endif %}
+              </tr>
+              <tr>
+                {% if f1_scores %}
+                  <th scope = "row">F1 Score</th>
+                    {% for f1_score in f1_scores %}
+                    <td>{{ f1_score |round(3, 'floor')}}</td>
+                    {% endfor %}  
+                {% endif %}
+              </tr>
+            </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+  </div>
+{% endif %}
 <hr/>
 <form action="" method=post enctype=multipart/form-data>		
 	<div class = "container mt-5">
-		<h2>Upload the file for prediction </h2>
+		<div class="container d-flex h-100">
+            <div class="row justify-content-center align-self-center">
+                <h1 class="display-4">Add dataset to workspace</h1>
+            </div>
+        </div>
+        <hr/>
 		<div class="form-group">
-			<label class="form-check-label" >Accepted files are TXT exported from Excel and CSV. </label>
-      		<input class="form-control-file" type=file name=file>
-			<label class="form-check-label" >Delimitter</label>
-            <input type = "text" class="form-control" name = "delimitter" placeholder=","/>
-      		<label class="form-check-label" >Qualifier</label>
-            <input type = "text" class="form-control" name = "qualifier" placeholder='""'/>
+              <div class="custom-file">
+                <input type="file" class="custom-file-input" id="customFile" name=file>
+                <label class="custom-file-label" for="customFile">Upload your data in the CSV or TXT format</label>
+              </div>
+            <hr>
+            <input type = "text" class="form-control" name = "delimitter" placeholder="Delimitter (only for TXT)"/>
+            <br>
+            <input type = "text" class="form-control" name = "qualifier" placeholder='String qualifier (only for TXT)'/>
 		</div>
 		<div class="form-group form-check">
         	<input class="form-check-input" type="checkbox" name="is-value-type" value = 1 checked>
-            <label class="form-check-label" >First row value types</label>
+            
+            <label class="form-check-label" >First row in the txt file contains datatypes (only for TXT).</label>
         </div>
-        <input class="btn btn-primary active" type=submit value=Upload>
+        <input class="btn btn-primary active btn-block btn-lg" type=submit value=Upload>
+
+
+        
+
 	</div>    
 </form>
 
@@ -71,4 +146,10 @@
 
 {% block scripts %}
 <script src="{{ url_for('static',filename='js/bar_plot.js') }}"></script>
+<script type="application/javascript">
+  $('input[type="file"]').change(function(e){
+      var fileName = e.target.files[0].name;
+      $('.custom-file-label').html(fileName);
+  });
+</script>
 {% endblock %}
