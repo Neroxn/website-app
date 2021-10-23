@@ -1,7 +1,6 @@
 from flask.templating import render_template
 import numpy as np
 import pandas as pd
-from sklearn.metrics import classification
 from sklearn.preprocessing import StandardScaler,FunctionTransformer
 from sklearn.linear_model import LinearRegression,LogisticRegression,ElasticNet
 from sklearn.svm import SVR,SVC
@@ -9,12 +8,14 @@ from sklearn.utils import shuffle
 from sklearn.multioutput import MultiOutputRegressor,MultiOutputClassifier
 from sklearn.base import clone
 from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, RandomForestClassifier, AdaBoostClassifier
+from sklearn.model_selection import StratifiedKFold,KFold
 from werkzeug.utils import redirect
 from .transformers import min_max_scale, object_encode, onehot_encode, standard_scale
 from utils import save_user_model,check_float
 from utils.transformers import calculate_model_score,pixel_scaler
 from flask import flash, url_for, session
 import tensorflow as tf
+
 
 
 def create_SVR(selected_parameters):
@@ -417,16 +418,18 @@ def cross_validate_models(X,y,model,K,**kwargs):
     X_copy = X.copy()
     y_copy = y.copy()
 
-    for k in range(K):
-        # shuffle the rows
-        concatted_shuffled = shuffle(pd.concat([X_copy,y_copy],axis = 1))
-        X_copy = concatted_shuffled[session.get("selected_x")]
-        y_copy = concatted_shuffled[session.get("selected_y")]
-        
-        # partition the data
-        X_test,y_test = X_copy.iloc[:test_size,:],y_copy.iloc[:test_size,:]
-        X_train,y_train = X_copy.iloc[test_size:,:],y_copy.iloc[test_size:,:]
+    if type_of_model == "classification" and len(session.get('selected_y')) == 1: # meaningless for regression model
+        fold = StratifiedKFold(n_splits=K,shuffle=True)
 
+    else:
+        fold = KFold(n_splits=K,shuffle=True)
+
+    for train_index,test_index in fold.split(X_copy,y_copy):
+
+        X_train, X_test = X_copy.iloc[train_index], X_copy.iloc[test_index]
+        y_train, y_test = y_copy.iloc[train_index], y_copy.iloc[test_index]
+
+    
         print("Check dimensions : ",X_test.shape,X_train.shape)
         # train the model
         if session.get("selected_model") in ["CNN_R","CNN_C"]: # if model is CNN, reshape inputs
@@ -437,7 +440,7 @@ def cross_validate_models(X,y,model,K,**kwargs):
         if session.get("selected_model") in ["CNN_R","CNN_C","DNN_R","DNN_C"]:
             model = train_DNN(model,X_train,y_train, epochs= kwargs["epochs"], batch_size = kwargs["batch_size"],
             callbacks = kwargs["callbacks"])
-        else:
+        else:   
             model = train_model(model,X_train,y_train)
 
         if model is None: # if an error occured while training the model 
@@ -475,7 +478,7 @@ def preprocess_for_model(selected_model,X,y):
     scaler,encoder = None,None
     selected_type = model_type(selected_model)
     scalers,encoders = [],[]
-
+    print(selected_model)
     # if selected model is CNN, divide the pixels by 255.0 instead of scaling
     if selected_model in ["CNN_R","CNN_C"]:
         scaled_data_X,scaler_X = min_max_scale(X.select_dtypes(include = "number"))
@@ -483,6 +486,7 @@ def preprocess_for_model(selected_model,X,y):
     else:
         scaled_data_X,scaler_X = standard_scale(X.select_dtypes(include = "number"))
         session["numerical_X"] = [col for col in X.select_dtypes(include = "number").columns]
+
 
     if selected_type == "classification":
         scaled_data_y,scaler_y = y.select_dtypes(include = [np.int8,np.int16,np.int32,np.int64]),None
